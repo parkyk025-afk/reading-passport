@@ -43,7 +43,7 @@ h1 { margin: 4px 0 0; font-family: var(--serif); font-size: clamp(22px, 4vw, 34p
 .login { max-width: 460px; display: grid; gap: 10px; }
 .login h2, .card h2 { margin: 0; font-size: 16px; }
 .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-input[type=password], input[type=search] { font: inherit; font-size: 15px; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-width: 0; }
+input[type=text], input[type=password], input[type=search] { font: inherit; font-size: 15px; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-width: 0; }
 input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .btn { font: inherit; font-weight: 700; font-size: 13.5px; padding: 9px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; white-space: nowrap; }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
@@ -103,18 +103,19 @@ tr.detail td { background: var(--paper); }
 <div class="wrap">
   <header class="top">
     <div><div class="eyebrow">SAHMYOOK UNIVERSITY LIBRARY · ADMIN</div><h1>독서 여권 완성자 관리</h1></div>
-    <div class="meta"><span id="when">-</span><br><a href="./">학생용 독서 여권 열기 →</a></div>
+    <div class="meta"><span id="when">-</span><br><a href="./">학생용 독서 여권 열기 →</a> <button class="btn" id="logoutBtn" type="button" hidden style="margin-left:8px;padding:5px 12px;font-size:12px">로그아웃</button></div>
   </header>
   <div class="demo" id="demo" hidden>시험 모드: 도서관 저장소에 연결되기 전이라, 이 브라우저에서 써 본 기록만 보입니다.</div>
 
   <section class="card login" id="login" aria-label="관리자 로그인">
-    <h2>관리자 비밀번호를 입력하세요</h2>
+    <h2>관리자 로그인</h2>
     <form class="row" id="loginForm" autocomplete="off">
-      <input type="password" id="key" placeholder="관리자 비밀번호" aria-label="관리자 비밀번호" style="flex:1 1 200px">
-      <button class="btn primary" id="loginBtn" type="submit">열기</button>
+      <input type="text" id="aid" placeholder="아이디" aria-label="관리자 아이디" autocapitalize="off" spellcheck="false" style="flex:1 1 140px">
+      <input type="password" id="key" placeholder="비밀번호" aria-label="관리자 비밀번호" style="flex:1 1 140px">
+      <button class="btn primary" id="loginBtn" type="submit">로그인</button>
     </form>
     <p class="err" id="loginErr" role="alert"></p>
-    <p class="note">이 페이지는 학생 학번이 보이므로 주소를 학생들에게 알리지 마세요. 창을 닫으면 다시 비밀번호를 물어봅니다.</p>
+    <p class="note">이 페이지는 학생 학번이 보이므로 주소를 학생들에게 알리지 마세요. 창을 닫거나 로그아웃하면 다시 로그인해야 합니다.</p>
   </section>
 
   <div id="dash" hidden>
@@ -161,8 +162,16 @@ let students = [], completers = [], openRow = null, timer = null;
 
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 
-async function fetchData(key) {
+/* 시험 모드용 확인값(아이디·비밀번호의 해시). 실제 확인은 구글 저장소 서버가 합니다 */
+const DEMO_HASH = "5393979997b2078d3f888fed26f4b19b31c74f70ed7ecfcb257e7b907c1bd9cd";
+async function sha(s) {
+  const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join("");
+}
+async function fetchData(cred) {
   if (!SYNC_URL) {
+    let h = ""; try { h = await sha(`ddc-admin:${cred.id}:${cred.key}`); } catch (e) {}
+    if (h !== DEMO_HASH) return { ok: false, error: "wrong" };
     let db = {}; try { db = JSON.parse(localStorage.getItem(LOCAL_DB) || "{}"); } catch (e) {}
     return { ok: true, at: new Date().toLocaleString("ko-KR"), students: Object.entries(db).map(([name, u]) => {
       const d = (u && u.data) || {}, st = Array.isArray(d.state) ? d.state : [], done = st.filter(s => s && s.done).length;
@@ -170,24 +179,24 @@ async function fetchData(key) {
         books: AREAS.map((_, k) => { const s = st[k] || {}; return { title: s.title || "", review: s.review || "", done: !!s.done, at: s.doneAt || "" }; }) };
     }) };
   }
-  const res = await fetch(SYNC_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "admin", key }) });
+  const res = await fetch(SYNC_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "admin", id: cred.id, key: cred.key }) });
   if (!res.ok) throw new Error(String(res.status));
   return res.json();
 }
 function errText(r) {
   switch (r && r.error) {
-    case "wrong": return `비밀번호가 맞지 않습니다. (${r.left}번 더 틀리면 15분간 잠깁니다)`;
-    case "locked": return `비밀번호를 여러 번 틀려 ${r.until}까지 잠겼습니다.`;
-    case "setup": return "저장소 코드의 ADMIN_PASSWORD가 아직 설정되지 않았습니다. Apps Script에서 바꾼 뒤 새 버전으로 배포해 주세요.";
+    case "wrong": return "아이디 또는 비밀번호가 맞지 않습니다." + (r.left != null ? ` (${r.left}번 더 틀리면 15분간 잠깁니다)` : "");
+    case "locked": return `여러 번 틀려 ${r.until}까지 잠겼습니다.`;
+    case "setup": return "저장소 코드에 관리자 아이디·비밀번호가 설정되지 않았습니다.";
     default: return "저장소에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.";
   }
 }
 
-async function load(key, silent) {
+async function load(cred, silent) {
   const btn = $("loginBtn"), rb = $("refreshBtn");
   btn.disabled = rb.disabled = true; rb.textContent = "불러오는 중…";
   let r;
-  try { r = await fetchData(key); } catch (e) { r = { ok: false, error: "net" }; }
+  try { r = await fetchData(cred); } catch (e) { r = { ok: false, error: "net" }; }
   btn.disabled = rb.disabled = false; rb.textContent = "새로 고침";
   if (!r.ok) {
     if (!$("dash").hidden) { $("when").textContent = errText(r); return; }
@@ -195,13 +204,13 @@ async function load(key, silent) {
     if (!silent) $("loginErr").textContent = errText(r);
     return;
   }
-  try { sessionStorage.setItem(KEY_SS, key); } catch (e) {}
-  $("login").hidden = true; $("dash").hidden = false; $("loginErr").textContent = "";
+  try { sessionStorage.setItem(KEY_SS, JSON.stringify(cred)); } catch (e) {}
+  $("login").hidden = true; $("dash").hidden = false; $("logoutBtn").hidden = false; $("loginErr").textContent = "";
   students = Array.isArray(r.students) ? r.students : [];
   completers = students.filter(s => Number(s.done) >= N).sort((a, b) => String(b.complete).localeCompare(String(a.complete)));
   $("when").textContent = "불러온 시각 " + (r.at || "");
   render();
-  clearInterval(timer); timer = setInterval(() => load(key, true), 60000);
+  clearInterval(timer); timer = setInterval(() => load(cred, true), 60000);
 }
 
 function render() {
@@ -295,13 +304,24 @@ $("csvBtn").addEventListener("click", () => {
   a.download = `독서여권_완성자_${ymd}.csv`; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 });
 $("q").addEventListener("input", renderList);
-$("refreshBtn").addEventListener("click", () => { let k = ""; try { k = sessionStorage.getItem(KEY_SS) || ""; } catch (e) {} load(k, false); });
-$("loginForm").addEventListener("submit", e => { e.preventDefault(); const k = $("key").value; if (!k) return; $("key").value = ""; load(k, false); });
+const savedCred = () => { try { return JSON.parse(sessionStorage.getItem(KEY_SS) || "null"); } catch (e) { return null; } };
+$("refreshBtn").addEventListener("click", () => { const c = savedCred(); if (c) load(c, false); });
+$("loginForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const id = $("aid").value.trim(), key = $("key").value;
+  if (!id || !key) { $("loginErr").textContent = "아이디와 비밀번호를 입력해 주세요."; return; }
+  $("key").value = ""; load({ id, key }, false);
+});
+$("logoutBtn").addEventListener("click", () => {
+  try { sessionStorage.removeItem(KEY_SS); } catch (e) {}
+  clearInterval(timer); students = []; completers = []; openRow = null;
+  $("tb").textContent = ""; $("dash").hidden = true; $("login").hidden = false; $("logoutBtn").hidden = true;
+  $("when").textContent = "-"; $("aid").value = ""; $("aid").focus();
+});
 let rT; addEventListener("resize", () => { clearTimeout(rT); rT = setTimeout(() => { if (!$("dash").hidden) drawChart(AREAS.map((_, k) => students.filter(s => s.books && s.books[k] && s.books[k].done).length)); }, 150); });
 
 $("demo").hidden = !!SYNC_URL;
-if (!SYNC_URL) { $("login").hidden = true; load("", true); }
-else { let k0 = ""; try { k0 = sessionStorage.getItem(KEY_SS) || ""; } catch (e) {} if (k0) load(k0, true); }
+{ const c0 = savedCred(); if (c0 && c0.id && c0.key) load(c0, true); }
 </script>
 </body>
 </html>
