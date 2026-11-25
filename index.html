@@ -206,7 +206,20 @@ body {
 }
 .toast:empty { opacity: 0; padding: 0; }
 .celebrate { position: fixed; inset: 0; z-index: 61; display: grid; place-items: center; pointer-events: none; padding: 16px; }
-.celebrate .card { background: var(--cover); color: var(--gold); border: 1px solid var(--gold); border-radius: 18px; padding: 24px 36px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,.3); animation: pop 3.2s cubic-bezier(.2,1.4,.4,1) forwards; }
+.celebrate { background: radial-gradient(closest-side, rgba(16, 24, 44, .35), transparent); }
+.celebrate .stack { display: grid; justify-items: center; }
+.celebrate .cheer { width: min(460px, 88vw); height: auto; display: block; margin-bottom: -22px; position: relative; z-index: 1; filter: drop-shadow(0 14px 26px rgba(0, 0, 0, .3)); animation: cheer 4.6s cubic-bezier(.2, 1.6, .4, 1) forwards; }
+@keyframes cheer {
+  0% { transform: scale(0) rotate(-12deg); opacity: 0; }
+  10% { transform: scale(1.15) rotate(4deg); opacity: 1; }
+  17% { transform: scale(.95) rotate(-2deg); }
+  24% { transform: scale(1.03) rotate(0); }
+  30%, 40%, 50%, 60% { transform: translateY(0); }
+  35%, 55% { transform: translateY(-10px); }
+  88% { transform: none; opacity: 1; }
+  100% { transform: scale(.92) translateY(-14px); opacity: 0; }
+}
+.celebrate .card { background: var(--cover); color: var(--gold); border: 1px solid var(--gold); border-radius: 18px; padding: 24px 36px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,.3); animation: pop 4.6s cubic-bezier(.2,1.4,.4,1) forwards; }
 .celebrate .big { font-weight: 700; font-size: clamp(32px, 8vw, 56px); line-height: 1.1; }
 .celebrate .small { font-family: var(--serif); font-size: 14px; letter-spacing: .12em; color: var(--gold-soft); }
 @keyframes pop { 0% { transform: scale(.4); opacity: 0; } 14% { transform: scale(1.06); opacity: 1; } 22%, 85% { transform: scale(1); opacity: 1; } 100% { transform: translateY(-10px); opacity: 0; } }
@@ -222,7 +235,7 @@ body {
   </filter>
 </svg>
 <canvas id="fx" aria-hidden="true"></canvas>
-<div class="celebrate" id="celebrate" hidden><div class="card" role="status"><div class="big">여권 완성!</div><div class="small">ALL 10 CLASSES · DDC 0XX–9XX</div></div></div>
+<div class="celebrate" id="celebrate" hidden><div class="stack"><img class="cheer" id="cheer" src="cheer.png" alt="응원하는 삼육대학교 캐릭터 수야와 수호" width="720" height="370" loading="eager"><div class="card" role="status"><div class="big">여권 완성!</div><div class="small">ALL 10 CLASSES · DDC 0XX–9XX</div></div></div></div>
 
 <div class="wrap">
   <header class="cover">
@@ -612,10 +625,11 @@ function burst(anchor, count) {
   }
 }
 function celebrate() {
-  const box = $("celebrate"), card = box.querySelector(".card");
-  box.hidden = false; card.style.animation = "none"; void card.offsetWidth; card.style.animation = "";
-  clearTimeout(celebrate.h); celebrate.h = setTimeout(() => box.hidden = true, 3300);
-  burst(); setTimeout(() => burst(), 900);
+  const box = $("celebrate");
+  box.hidden = false;
+  box.querySelectorAll(".card, .cheer").forEach(el => { el.style.animation = "none"; void el.offsetWidth; el.style.animation = ""; });
+  clearTimeout(celebrate.h); celebrate.h = setTimeout(() => box.hidden = true, 4700);
+  burst(); setTimeout(() => burst(), 800); setTimeout(() => burst(), 1600); setTimeout(() => burst(), 2600);
 }
 
 /* ── 시작 ── */
