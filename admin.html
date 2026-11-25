@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>독서 여권 관리자</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&family=Cinzel:wght@600;700&family=IBM+Plex+Mono:wght@500;600&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+:root {
+  --paper: #eef3ee; --card: #f8fbf7; --ink: #1a2230; --muted: #5a6575; --line: #c9d3cf; --grid: #dde4e0;
+  --cover: #1b2a4a; --cover-2: #26396a; --gold: #d1ad5c; --gold-soft: #e9d6a6; --cream: #f4ecd6;
+  --accent: #1b2a4a; --accent-ink: #f4ecd6; --accent-soft: #dfe6f2; --bar: #2f4a86; --bar-hi: #1b2a4a; --warn: #b4441d; --ok: #1f7a4d;
+  --display: "Archivo", "Noto Sans KR", sans-serif; --serif: "Cinzel", serif; --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  --body: "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #10151c; --card: #171e27; --ink: #e8edf2; --muted: #9aa6b4; --line: #2f3944; --grid: #252e38;
+    --cover: #16223d; --cover-2: #22345c; --accent: #dcb968; --accent-ink: #141a26; --accent-soft: #2a3245;
+    --bar: #8fa8e0; --bar-hi: #dcb968; --warn: #f08a5d; --ok: #5fd39a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #10151c; --card: #171e27; --ink: #e8edf2; --muted: #9aa6b4; --line: #2f3944; --grid: #252e38;
+  --cover: #16223d; --cover-2: #22345c; --accent: #dcb968; --accent-ink: #141a26; --accent-soft: #2a3245;
+  --bar: #8fa8e0; --bar-hi: #dcb968; --warn: #f08a5d; --ok: #5fd39a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 14px/1.55 var(--body); padding: 24px max(16px, env(safe-area-inset-right)) 56px max(16px, env(safe-area-inset-left)); }
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 16px; }
+.wrap > * { min-width: 0; }
+[hidden] { display: none !important; }
+.top { background: radial-gradient(120% 140% at 30% 0%, var(--cover-2), var(--cover) 62%); color: var(--gold); border-radius: 16px; padding: 20px 24px; display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.eyebrow { font-family: var(--serif); font-size: 12px; letter-spacing: .2em; color: var(--gold-soft); }
+h1 { margin: 4px 0 0; font-family: var(--serif); font-size: clamp(22px, 4vw, 34px); letter-spacing: .05em; }
+.top .meta { font-size: 12.5px; color: #c9cfdc; text-align: right; }
+.top .meta a { color: var(--gold-soft); }
+.demo { border: 1px dashed var(--warn); color: var(--warn); background: var(--card); border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: 700; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
+.login { max-width: 460px; display: grid; gap: 10px; }
+.login h2, .card h2 { margin: 0; font-size: 16px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+input[type=password], input[type=search] { font: inherit; font-size: 15px; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-width: 0; }
+input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.btn { font: inherit; font-weight: 700; font-size: 13.5px; padding: 9px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; white-space: nowrap; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn:disabled { opacity: .55; cursor: default; }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.err { color: var(--warn); font-weight: 700; font-size: 13px; margin: 0; }
+.err:empty { display: none; }
+.note { font-size: 12.5px; color: var(--muted); margin: 0; }
+
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 760px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.kpi { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: grid; gap: 2px; }
+.kpi .k { font-size: 12px; font-weight: 700; color: var(--muted); }
+.kpi .n { font-family: var(--display); font-weight: 800; font-stretch: 78%; font-size: 40px; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.kpi .n small { font-size: 16px; font-weight: 600; color: var(--muted); margin-left: 2px; }
+.kpi .s { font-size: 12px; color: var(--muted); }
+.kpi.hl { background: var(--cover); border-color: var(--cover); }
+.kpi.hl .k, .kpi.hl .s, .kpi.hl .n small { color: var(--gold-soft); }
+.kpi.hl .n { color: var(--gold); }
+
+.chart-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; height: 240px; overflow: visible; }
+.chart .gl { stroke: var(--grid); stroke-width: 1; }
+.chart .ax { fill: var(--muted); font: 500 11px var(--mono); }
+.chart .xl { fill: var(--ink); font: 700 12px var(--mono); }
+.chart .bar { fill: var(--bar); }
+.chart .hit { fill: transparent; cursor: default; }
+.chart .hit:hover + .bar, .chart g.on .bar { fill: var(--bar-hi); }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--paper); font-size: 12.5px; padding: 6px 10px; border-radius: 8px; white-space: nowrap; transform: translate(-50%, -110%); }
+details.tv { margin-top: 8px; }
+details.tv summary { cursor: pointer; font-size: 12.5px; color: var(--muted); }
+details.tv table { min-width: 0; margin-top: 6px; }
+
+.list-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.list-head .row input { flex: 1 1 200px; }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+table { width: 100%; border-collapse: collapse; min-width: 620px; }
+th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 600 11px var(--mono); letter-spacing: .1em; color: var(--muted); background: color-mix(in srgb, var(--line) 35%, var(--card)); }
+td.n, td.t, td.i { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+td.n { color: var(--muted); width: 56px; }
+td.nm { font-weight: 700; }
+tr:last-child td { border-bottom: 0; }
+tr.detail td { background: var(--paper); }
+.books { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 10px; }
+.book { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: grid; gap: 4px; }
+.book .bc { font: 700 12px var(--mono); color: var(--muted); }
+.book .bt { font-weight: 700; }
+.book .br { font-size: 13px; color: var(--muted); white-space: pre-wrap; word-break: break-all; }
+.empty { padding: 28px; text-align: center; color: var(--muted); }
+.dup { display: inline-block; margin-left: 6px; font: 700 11px var(--body); color: var(--warn); border: 1px solid var(--warn); border-radius: 4px; padding: 0 5px; }
+.miss { color: var(--warn); font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div><div class="eyebrow">SAHMYOOK UNIVERSITY LIBRARY · ADMIN</div><h1>독서 여권 완성자 관리</h1></div>
+    <div class="meta"><span id="when">-</span><br><a href="./">학생용 독서 여권 열기 →</a></div>
+  </header>
+  <div class="demo" id="demo" hidden>시험 모드: 도서관 저장소에 연결되기 전이라, 이 브라우저에서 써 본 기록만 보입니다.</div>
+
+  <section class="card login" id="login" aria-label="관리자 로그인">
+    <h2>관리자 비밀번호를 입력하세요</h2>
+    <form class="row" id="loginForm" autocomplete="off">
+      <input type="password" id="key" placeholder="관리자 비밀번호" aria-label="관리자 비밀번호" style="flex:1 1 200px">
+      <button class="btn primary" id="loginBtn" type="submit">열기</button>
+    </form>
+    <p class="err" id="loginErr" role="alert"></p>
+    <p class="note">이 페이지는 학생 학번이 보이므로 주소를 학생들에게 알리지 마세요. 창을 닫으면 다시 비밀번호를 물어봅니다.</p>
+  </section>
+
+  <div id="dash" hidden>
+    <div class="wrap">
+      <section class="kpis" aria-label="요약">
+        <div class="kpi hl"><span class="k">완성자</span><span class="n" id="kDone">0<small>명</small></span><span class="s">10칸 모두 도장</span></div>
+        <div class="kpi"><span class="k">참여 학생</span><span class="n" id="kAll">0<small>명</small></span><span class="s">여권을 연 학생</span></div>
+        <div class="kpi"><span class="k">완성률</span><span class="n" id="kRate">0<small>%</small></span><span class="s">완성자 ÷ 참여 학생</span></div>
+        <div class="kpi"><span class="k">평균 도장</span><span class="n" id="kAvg">0<small>/10</small></span><span class="s">참여 학생 1인당</span></div>
+      </section>
+
+      <section class="card" aria-label="분야별 도장 현황">
+        <div class="chart-head"><h2>분야별 도장 받은 학생 수</h2><span class="note">막대에 마우스를 올리면 숫자가 보입니다</span></div>
+        <div class="chart" id="chart"></div>
+        <details class="tv"><summary>표로 보기</summary><div class="tbl"><table id="chartTable"><thead><tr><th>분야</th><th>도장 받은 학생</th></tr></thead><tbody></tbody></table></div></details>
+      </section>
+
+      <section class="card" aria-label="완성자 명단">
+        <div class="list-head">
+          <h2>완성자 명단 <span class="note" id="listCount"></span></h2>
+          <div class="row">
+            <input type="search" id="q" placeholder="이름, 학번, 학과로 찾기" aria-label="명단 검색">
+            <button class="btn" id="copyBtn" type="button">엑셀용 복사</button>
+            <button class="btn" id="csvBtn" type="button">CSV 내려받기</button>
+            <button class="btn primary" id="refreshBtn" type="button">새로 고침</button>
+          </div>
+        </div>
+        <div class="tbl"><table><thead><tr><th>NO.</th><th>완성일</th><th>학과</th><th>학번</th><th>이름</th><th>서평</th></tr></thead><tbody id="tb"></tbody></table>
+          <div class="empty" id="empty" hidden>아직 10칸을 모두 완성한 학생이 없습니다.</div></div>
+        <p class="note" style="margin-top:10px">10칸에 모두 도장을 받은 학생만 나옵니다. 학과·학번 칸이 빨간 학생은 아직 입력하지 않은 것입니다. 같은 학번이 두 번 나오면 "중복"으로 표시합니다.</p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+/* 학생용 페이지와 같은 저장소 주소(…/exec). 비어 있으면 시험 모드 */
+const SYNC_URL = "";
+
+const AREAS = [["000", "총류"], ["100", "철학·심리학"], ["200", "종교"], ["300", "사회과학"], ["400", "언어"], ["500", "자연과학"], ["600", "기술과학"], ["700", "예술"], ["800", "문학"], ["900", "역사·지리"]];
+const N = AREAS.length, KEY_SS = "ddc-passport-admin-key", LOCAL_DB = "ddc-passport-local-db-v1";
+const $ = id => document.getElementById(id);
+let students = [], completers = [], openRow = null, timer = null;
+
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+async function fetchData(key) {
+  if (!SYNC_URL) {
+    let db = {}; try { db = JSON.parse(localStorage.getItem(LOCAL_DB) || "{}"); } catch (e) {}
+    return { ok: true, at: new Date().toLocaleString("ko-KR"), students: Object.entries(db).map(([name, u]) => {
+      const d = (u && u.data) || {}, st = Array.isArray(d.state) ? d.state : [], done = st.filter(s => s && s.done).length;
+      return { name, dept: (d.student && d.student.dept) || "", sid: (d.student && d.student.sid) || "", done, complete: done >= N ? (d.completed || "") : "",
+        books: AREAS.map((_, k) => { const s = st[k] || {}; return { title: s.title || "", review: s.review || "", done: !!s.done, at: s.doneAt || "" }; }) };
+    }) };
+  }
+  const res = await fetch(SYNC_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "admin", key }) });
+  if (!res.ok) throw new Error(String(res.status));
+  return res.json();
+}
+function errText(r) {
+  switch (r && r.error) {
+    case "wrong": return `비밀번호가 맞지 않습니다. (${r.left}번 더 틀리면 15분간 잠깁니다)`;
+    case "locked": return `비밀번호를 여러 번 틀려 ${r.until}까지 잠겼습니다.`;
+    case "setup": return "저장소 코드의 ADMIN_PASSWORD가 아직 설정되지 않았습니다. Apps Script에서 바꾼 뒤 새 버전으로 배포해 주세요.";
+    default: return "저장소에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.";
+  }
+}
+
+async function load(key, silent) {
+  const btn = $("loginBtn"), rb = $("refreshBtn");
+  btn.disabled = rb.disabled = true; rb.textContent = "불러오는 중…";
+  let r;
+  try { r = await fetchData(key); } catch (e) { r = { ok: false, error: "net" }; }
+  btn.disabled = rb.disabled = false; rb.textContent = "새로 고침";
+  if (!r.ok) {
+    if (!$("dash").hidden) { $("when").textContent = errText(r); return; }
+    try { sessionStorage.removeItem(KEY_SS); } catch (e) {}
+    if (!silent) $("loginErr").textContent = errText(r);
+    return;
+  }
+  try { sessionStorage.setItem(KEY_SS, key); } catch (e) {}
+  $("login").hidden = true; $("dash").hidden = false; $("loginErr").textContent = "";
+  students = Array.isArray(r.students) ? r.students : [];
+  completers = students.filter(s => Number(s.done) >= N).sort((a, b) => String(b.complete).localeCompare(String(a.complete)));
+  $("when").textContent = "불러온 시각 " + (r.at || "");
+  render();
+  clearInterval(timer); timer = setInterval(() => load(key, true), 60000);
+}
+
+function render() {
+  const all = students.length, done = completers.length;
+  const avg = all ? students.reduce((a, s) => a + Number(s.done || 0), 0) / all : 0;
+  $("kDone").innerHTML = ""; $("kDone").append(String(done), el("small", null, "명"));
+  $("kAll").innerHTML = ""; $("kAll").append(String(all), el("small", null, "명"));
+  $("kRate").innerHTML = ""; $("kRate").append(String(all ? Math.round(done / all * 100) : 0), el("small", null, "%"));
+  $("kAvg").innerHTML = ""; $("kAvg").append(avg.toFixed(1), el("small", null, "/10"));
+  drawChart(AREAS.map((_, k) => students.filter(s => s.books && s.books[k] && s.books[k].done).length));
+  renderList();
+}
+
+function drawChart(counts) {
+  const box = $("chart"), W = Math.max(320, box.clientWidth || 800), H = 240, L = 34, R = 8, T = 14, B = 30;
+  const max = Math.max(1, ...counts), step = max <= 5 ? 1 : Math.ceil(max / 4), top = Math.ceil(max / step) * step;
+  const iw = W - L - R, ih = H - T - B, bw = iw / N, barW = Math.min(44, bw * .56);
+  const NS = "http://www.w3.org/2000/svg", svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("role", "img");
+  svg.setAttribute("aria-label", "분야별 도장 받은 학생 수: " + AREAS.map((a, k) => `${a[0]} ${counts[k]}명`).join(", "));
+  const mk = (t, a) => { const e = document.createElementNS(NS, t); Object.entries(a).forEach(([k, v]) => e.setAttribute(k, v)); return e; };
+  for (let v = 0; v <= top; v += step) {
+    const y = T + ih - v / top * ih;
+    svg.append(mk("line", { class: "gl", x1: L, x2: W - R, y1: y, y2: y }));
+    const t = mk("text", { class: "ax", x: L - 8, y: y + 4, "text-anchor": "end" }); t.textContent = v; svg.append(t);
+  }
+  const tip = el("div", "tip"); tip.hidden = true;
+  counts.forEach((c, k) => {
+    const cx = L + bw * k + bw / 2, h = c / top * ih, x = cx - barW / 2, y = T + ih - h, r = Math.min(4, h / 2, barW / 2);
+    const g = mk("g", {});
+    const hit = mk("rect", { class: "hit", x: L + bw * k, y: T, width: bw, height: ih + B });
+    const d = h <= 0 ? "" : `M${x},${T + ih} V${y + r} Q${x},${y} ${x + r},${y} H${x + barW - r} Q${x + barW},${y} ${x + barW},${y + r} V${T + ih} Z`;
+    const bar = mk("path", { class: "bar", d });
+    const xl = mk("text", { class: "xl", x: cx, y: H - 10, "text-anchor": "middle" }); xl.textContent = AREAS[k][0];
+    g.append(hit, bar, xl);
+    const show = () => { g.classList.add("on"); tip.hidden = false; tip.textContent = `${AREAS[k][0]} ${AREAS[k][1]} · ${c}명`; tip.style.left = (cx / W * 100) + "%"; tip.style.top = (y / H * 240) + "px"; };
+    const hide = () => { g.classList.remove("on"); tip.hidden = true; };
+    hit.addEventListener("mouseenter", show); hit.addEventListener("mouseleave", hide);
+    hit.addEventListener("touchstart", show, { passive: true });
+    svg.append(g);
+  });
+  box.textContent = ""; box.append(svg, tip);
+  const tb = $("chartTable").querySelector("tbody"); tb.textContent = "";
+  counts.forEach((c, k) => { const tr = el("tr"); tr.append(el("td", "t", `${AREAS[k][0]} ${AREAS[k][1]}`), el("td", "t", c + "명")); tb.append(tr); });
+}
+
+function renderList() {
+  const q = $("q").value.trim().toLowerCase(), tb = $("tb");
+  const cnt = {}; completers.forEach(s => { if (s.sid) cnt[s.sid] = (cnt[s.sid] || 0) + 1; });
+  const rows = completers.filter(s => !q || `${s.name} ${s.sid} ${s.dept}`.toLowerCase().includes(q));
+  tb.textContent = "";
+  rows.forEach(s => {
+    const tr = el("tr");
+    const no = completers.length - completers.indexOf(s);
+    tr.append(el("td", "n", String(no).padStart(2, "0")), el("td", "t", (s.complete || "-").slice(0, 10)));
+    const dTd = el("td", s.dept ? "" : "miss", s.dept || "미입력");
+    const iTd = el("td", "i" + (s.sid ? "" : " miss"), s.sid || "미입력");
+    if (s.sid && cnt[s.sid] > 1) iTd.append(el("span", "dup", "중복"));
+    const bTd = el("td"); const b = el("button", "btn", openRow === s.name ? "접기" : "보기"); b.type = "button";
+    b.addEventListener("click", () => { openRow = openRow === s.name ? null : s.name; renderList(); });
+    bTd.append(b);
+    tr.append(dTd, iTd, el("td", "nm", s.name), bTd);
+    tb.append(tr);
+    if (openRow === s.name) {
+      const dr = el("tr", "detail"), td = el("td"); td.colSpan = 6;
+      const grid = el("div", "books");
+      AREAS.forEach(([c, n], k) => {
+        const bk = (s.books && s.books[k]) || {}, card = el("div", "book");
+        card.append(el("span", "bc", `${c} ${n} · ${bk.at || ""}`), el("span", "bt", bk.title || "-"), el("span", "br", bk.review || "-"));
+        grid.append(card);
+      });
+      td.append(grid); dr.append(td); tb.append(dr);
+    }
+  });
+  $("empty").hidden = rows.length > 0;
+  $("empty").textContent = completers.length ? "검색 결과가 없습니다." : "아직 10칸을 모두 완성한 학생이 없습니다.";
+  $("listCount").textContent = `· ${completers.length}명`;
+}
+
+const tableRows = () => [["완성일", "학과", "학번", "이름"]].concat(completers.map(s => [(s.complete || "").slice(0, 10), s.dept, s.sid, s.name]));
+$("copyBtn").addEventListener("click", () => {
+  const txt = tableRows().map(r => r.join("\t")).join("\n");
+  navigator.clipboard.writeText(txt).then(() => { $("copyBtn").textContent = "복사했습니다"; setTimeout(() => $("copyBtn").textContent = "엑셀용 복사", 2000); })
+    .catch(() => { $("copyBtn").textContent = "복사가 막혔습니다"; });
+});
+$("csvBtn").addEventListener("click", () => {
+  const esc = v => { v = String(v == null ? "" : v); if (/^[=+\-@]/.test(v)) v = "'" + v; return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
+  const csv = "﻿" + tableRows().map(r => r.map(esc).join(",")).join("\r\n");
+  const d = new Date(), ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  a.download = `독서여권_완성자_${ymd}.csv`; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+});
+$("q").addEventListener("input", renderList);
+$("refreshBtn").addEventListener("click", () => { let k = ""; try { k = sessionStorage.getItem(KEY_SS) || ""; } catch (e) {} load(k, false); });
+$("loginForm").addEventListener("submit", e => { e.preventDefault(); const k = $("key").value; if (!k) return; $("key").value = ""; load(k, false); });
+let rT; addEventListener("resize", () => { clearTimeout(rT); rT = setTimeout(() => { if (!$("dash").hidden) drawChart(AREAS.map((_, k) => students.filter(s => s.books && s.books[k] && s.books[k].done).length)); }, 150); });
+
+$("demo").hidden = !!SYNC_URL;
+if (!SYNC_URL) { $("login").hidden = true; load("", true); }
+else { let k0 = ""; try { k0 = sessionStorage.getItem(KEY_SS) || ""; } catch (e) {} if (k0) load(k0, true); }
+</script>
+</body>
+</html>

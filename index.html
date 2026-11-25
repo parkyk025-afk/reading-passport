@@ -112,6 +112,16 @@ body {
 .kv { display: grid; gap: 2px; min-width: 0; }
 .kv .k { font-size: 11.5px; font-weight: 700; color: var(--muted); }
 .kv .v { font-weight: 700; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kin { width: 100%; font: inherit; font-size: 15px; font-weight: 700; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; }
+.kin:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.kin.need { border-color: var(--warn); }
+
+/* 완성 안내 */
+.complete { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 18px; align-items: center; border-radius: 16px; padding: 18px 22px; background: linear-gradient(100deg, #e7c46f, #d1ad5c 55%, #c39a45); color: #1b2a4a; box-shadow: 0 10px 26px rgba(150, 110, 30, .25); }
+.complete .seal { width: 64px; height: 64px; border-radius: 50%; border: 3px solid #1b2a4a; display: grid; place-items: center; font-family: var(--serif); font-weight: 700; font-size: 12px; letter-spacing: .1em; text-align: center; line-height: 1.2; }
+.complete .ct { font-size: clamp(18px, 2.6vw, 23px); font-weight: 700; line-height: 1.3; }
+.complete .cs { font-size: 13.5px; font-weight: 500; }
+.complete.pending .seal { border-style: dashed; }
 .mrz { font-family: var(--mono); font-weight: 600; font-size: clamp(10px, 1.5vw, 15px); letter-spacing: .14em; line-height: 1.55; padding: 10px 16px 12px; border-top: 1px dashed var(--line); white-space: pre; overflow-x: auto; }
 
 /* 비자 칸 */
@@ -230,12 +240,17 @@ body {
     <p class="ck-err" id="ckErr" role="alert"></p>
   </section>
 
+  <section class="complete" id="complete" aria-live="polite" hidden>
+    <div class="seal" aria-hidden="true">ALL<br>10</div>
+    <div><div class="ct" id="cTitle"></div><div class="cs" id="cSub"></div></div>
+  </section>
+
   <section class="datapage" id="datapage" aria-label="여권 소지인 정보">
-    <div class="dp-head"><span>PASSPORT DATA · 소지인 정보</span><span>TYPE RP · DDC</span></div>
+    <div class="dp-head"><span>PASSPORT DATA · 소지인 정보</span><span>삼육대학교 도서관 발급 · <span id="pIssued">-</span></span></div>
     <div class="dp-body">
       <div class="kv"><span class="k">이름 · Name</span><span class="v" id="pName">-</span></div>
-      <div class="kv"><span class="k">발급 기관 · Authority</span><span class="v">삼육대학교 도서관</span></div>
-      <div class="kv"><span class="k">발급일 · Issued</span><span class="v" id="pIssued">-</span></div>
+      <div class="kv"><label class="k" for="pDept">학과 · Department</label><input class="kin" type="text" id="pDept" maxlength="40" autocomplete="off" placeholder="예: 문헌정보학과"></div>
+      <div class="kv"><label class="k" for="pSid">학번 · Student No.</label><input class="kin" type="text" id="pSid" maxlength="12" inputmode="numeric" autocomplete="off" placeholder="예: 2026123456"></div>
       <div class="kv"><span class="k">받은 도장 · Stamps</span><span class="v" id="pStamps">0 / 10</span></div>
     </div>
     <div class="mrz" id="mrz" aria-hidden="true"></div>
@@ -281,6 +296,8 @@ const blank = () => AREAS.map(() => ({ title: "", review: "", done: false, doneA
 const norm = a => Array.isArray(a) && a.length === N ? a.map(s => Object.assign({ title: "", review: "", done: false, doneAt: "" }, s)) : blank();
 
 let state = blank(), issued = "", sess = null, applying = false, synced = true, localUpdated = 0;
+let student = { dept: "", sid: "" }, completed = "";
+const sidOk = s => /^\d{6,12}$/.test(s || "");
 
 /* ── 화면 그리기 ── */
 const track = $("track"), grid = $("grid");
@@ -335,7 +352,12 @@ function render() {
     grid.children[i].classList.toggle("done", s.done);
   });
   const done = state.filter(s => s.done).length;
+  if (done === N && !completed) completed = today();
+  if (done < N) completed = "";
   [...track.children].forEach((el, i) => el.classList.toggle("on", i < done));
+  $("pDept").classList.toggle("need", done === N && !student.dept.trim());
+  $("pSid").classList.toggle("need", done === N && !sidOk(student.sid));
+  renderComplete(done);
   $("doneN").innerHTML = `${done}<small>/${N}</small>`;
   $("pStamps").textContent = `${done} / ${N}`;
   $("pName").textContent = sess ? sess.name : "-";
@@ -346,6 +368,22 @@ function render() {
     pad("P" + pad(nm, 6) + "<KOR" + (issued || today()).replace(/\./g, "").slice(2) + "<S" + String(done).padStart(2, "0") + "<<LIBRARY", 44);
 }
 
+function renderComplete(done) {
+  if (done == null) done = state.filter(s => s.done).length;
+  const box = $("complete"), all = sess && done === N;
+  box.hidden = !all;
+  if (!all) return;
+  const miss = [!student.dept.trim() && "학과", !sidOk(student.sid) && "학번"].filter(Boolean);
+  box.classList.toggle("pending", miss.length > 0 || !synced);
+  if (miss.length) { $("cTitle").textContent = "10칸 완성! 학과·학번을 입력해 주세요"; $("cSub").textContent = `아래 소지인 정보에 ${miss.join("과 ")}을 입력해야 도서관 완성자 명단에 올라갑니다.`; }
+  else if (!synced) { $("cTitle").textContent = "10칸 완성! 도서관에 등록하는 중…"; $("cSub").textContent = "잠시만 기다려 주세요. 인터넷이 연결되어 있어야 합니다."; }
+  else { $("cTitle").textContent = "독서 여권 완성! 완성자 명단에 등록되었습니다"; $("cSub").textContent = `${student.dept} · ${student.sid} · ${sess.name} · 완성일 ${completed || today()}`; }
+}
+["pDept", "pSid"].forEach(id => $(id).addEventListener("input", e => {
+  if (id === "pSid") { const v = e.target.value.replace(/\D/g, ""); if (v !== e.target.value) e.target.value = v; student.sid = v; }
+  else student.dept = e.target.value;
+  render(); save();
+}));
 function setLocked(on) {
   ["grid", "datapage"].forEach(id => { $(id).inert = on; $(id).classList.toggle("locked", on); });
   $("copyBtn").disabled = on;
@@ -355,11 +393,14 @@ function applyData(d) {
   state = norm(d && d.state);
   issued = (d && d.issued) || (sess ? today() : "");
   localUpdated = (d && d.updated) || 0;
+  student = { dept: String((d && d.student && d.student.dept) || ""), sid: String((d && d.student && d.student.sid) || "") };
+  completed = (d && d.completed) || "";
+  $("pDept").value = student.dept; $("pSid").value = student.sid;
   state.forEach((s, i) => { $("t" + i).value = s.title; $("r" + i).value = s.review; });
   render();
   applying = false;
 }
-const packData = () => ({ updated: localUpdated, issued, state });
+const packData = () => ({ updated: localUpdated, issued, student, completed, state });
 
 /* ── 저장소 통신 (시험 모드에서는 같은 규칙을 이 브라우저 안에서 흉내) ── */
 async function sha(s) {
@@ -410,6 +451,7 @@ function save() {
   localUpdated = Date.now(); synced = false;
   try { localStorage.setItem(CACHE_KEY, JSON.stringify(Object.assign({ owner: sess.name }, packData()))); } catch (e) {}
   setStatus("저장하는 중…");
+  renderComplete();
   clearTimeout(pushT); pushT = setTimeout(push, 1200);
 }
 let pushT = null, pushing = false, pending = false;
@@ -422,7 +464,7 @@ async function push() {
   let stop = false;
   try {
     const r = await api({ action: "save", name: sess.name, pin: sess.pin, data: packData() });
-    if (r.ok) { if (localUpdated === sentAt) synced = true; setStatus(`${SYNC_URL ? "도서관에" : "이 브라우저에"} 저장됨 · ${String(r.saved || "").slice(-5)}`); }
+    if (r.ok) { if (localUpdated === sentAt) synced = true; renderComplete(); setStatus(`${SYNC_URL ? "도서관에" : "이 브라우저에"} 저장됨 · ${String(r.saved || "").slice(-5)}`); }
     else { setStatus(errText(r) + " (이 기기에 임시 보관 중)", true); stop = ["wrong", "locked", "big"].includes(r.error); }
   } catch (e) {
     setStatus("인터넷이 끊겨 아직 저장하지 못했습니다. 이 기기에 임시 보관 중이며 연결되면 다시 저장합니다.", true);
@@ -502,7 +544,7 @@ addEventListener("pagehide", () => {
 
 $("copyBtn").addEventListener("click", () => {
   const done = state.filter(s => s.done).length;
-  const txt = `DDC 독서 여권 · ${sess ? sess.name : ""} · 도장 ${done}/${N} (${today()})\n\n` +
+  const txt = `DDC 독서 여권 · ${student.dept || "-"} · ${student.sid || "-"} · ${sess ? sess.name : ""} · 도장 ${done}/${N} (${today()})\n\n` +
     AREAS.map(([c, n], i) => `[${c} ${n}] ${state[i].done ? "도장 " + state[i].doneAt : "진행 중"}\n서명: ${state[i].title || "-"}\n서평: ${state[i].review || "-"}`).join("\n\n");
   navigator.clipboard.writeText(txt).then(() => toast("기록을 복사했습니다.")).catch(() => toast("복사가 막혀 있습니다. 글을 직접 선택해 복사해 주세요."));
 });
