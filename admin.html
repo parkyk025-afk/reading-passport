@@ -143,9 +143,9 @@ tr.detail td { background: var(--paper); }
             <button class="btn primary" id="refreshBtn" type="button">새로 고침</button>
           </div>
         </div>
-        <div class="tbl"><table><thead><tr><th>NO.</th><th>완성일</th><th>학과</th><th>학번</th><th>이름</th><th>서평</th></tr></thead><tbody id="tb"></tbody></table>
+        <div class="tbl"><table><thead><tr><th>NO.</th><th>완성일</th><th>학과</th><th>학번</th><th>이름</th><th>개인정보 동의</th><th>서평</th></tr></thead><tbody id="tb"></tbody></table>
           <div class="empty" id="empty" hidden>아직 10칸을 모두 완성한 학생이 없습니다.</div></div>
-        <p class="note" style="margin-top:10px">10칸에 모두 도장을 받은 학생만 나옵니다. 학과·학번 칸이 빨간 학생은 아직 입력하지 않은 것입니다. 같은 학번이 두 번 나오면 "중복"으로 표시합니다.</p>
+        <p class="note" style="margin-top:10px">10칸에 모두 도장을 받고, 개인정보 수집·이용에 동의하고, 학과·학번까지 입력한 학생만 나옵니다. 개인정보는 기념품 지급(당첨자 발표) 후 1개월이 지나면 파기해 주세요. 같은 학번이 두 번 나오면 "중복"으로 표시합니다.</p>
       </section>
     </div>
   </div>
@@ -175,7 +175,8 @@ async function fetchData(cred) {
     let db = {}; try { db = JSON.parse(localStorage.getItem(LOCAL_DB) || "{}"); } catch (e) {}
     return { ok: true, at: new Date().toLocaleString("ko-KR"), students: Object.entries(db).map(([name, u]) => {
       const d = (u && u.data) || {}, st = Array.isArray(d.state) ? d.state : [], done = st.filter(s => s && s.done).length;
-      return { name, dept: (d.student && d.student.dept) || "", sid: (d.student && d.student.sid) || "", done, complete: done >= N ? (d.completed || "") : "",
+      const dept = (d.student && d.student.dept) || "", sid = (d.student && d.student.sid) || "", cons = d.consent && d.consent.agreed ? (d.consent.at || "동의") : "";
+      return { name, dept, sid, done, consent: cons, complete: done >= N && cons && dept && /^\d{6,12}$/.test(sid) ? (d.completed || "") || "완성" : "",
         books: AREAS.map((_, k) => { const s = st[k] || {}; return { title: s.title || "", review: s.review || "", done: !!s.done, at: s.doneAt || "" }; }) };
     }) };
   }
@@ -207,7 +208,7 @@ async function load(cred, silent) {
   try { sessionStorage.setItem(KEY_SS, JSON.stringify(cred)); } catch (e) {}
   $("login").hidden = true; $("dash").hidden = false; $("logoutBtn").hidden = false; $("loginErr").textContent = "";
   students = Array.isArray(r.students) ? r.students : [];
-  completers = students.filter(s => Number(s.done) >= N).sort((a, b) => String(b.complete).localeCompare(String(a.complete)));
+  completers = students.filter(s => Number(s.done) >= N && s.complete && s.consent).sort((a, b) => String(b.complete).localeCompare(String(a.complete)));
   $("when").textContent = "불러온 시각 " + (r.at || "");
   render();
   clearInterval(timer); timer = setInterval(() => load(cred, true), 60000);
@@ -272,10 +273,10 @@ function renderList() {
     const bTd = el("td"); const b = el("button", "btn", openRow === s.name ? "접기" : "보기"); b.type = "button";
     b.addEventListener("click", () => { openRow = openRow === s.name ? null : s.name; renderList(); });
     bTd.append(b);
-    tr.append(dTd, iTd, el("td", "nm", s.name), bTd);
+    tr.append(dTd, iTd, el("td", "nm", s.name), el("td", "t", s.consent ? "✓ " + String(s.consent).slice(0, 10) : "-"), bTd);
     tb.append(tr);
     if (openRow === s.name) {
-      const dr = el("tr", "detail"), td = el("td"); td.colSpan = 6;
+      const dr = el("tr", "detail"), td = el("td"); td.colSpan = 7;
       const grid = el("div", "books");
       AREAS.forEach(([c, n], k) => {
         const bk = (s.books && s.books[k]) || {}, card = el("div", "book");
@@ -290,7 +291,7 @@ function renderList() {
   $("listCount").textContent = `· ${completers.length}명`;
 }
 
-const tableRows = () => [["완성일", "학과", "학번", "이름"]].concat(completers.map(s => [(s.complete || "").slice(0, 10), s.dept, s.sid, s.name]));
+const tableRows = () => [["완성일", "학과", "학번", "이름", "개인정보 동의일"]].concat(completers.map(s => [(s.complete || "").slice(0, 10), s.dept, s.sid, s.name, String(s.consent || "").slice(0, 16)]));
 $("copyBtn").addEventListener("click", () => {
   const txt = tableRows().map(r => r.join("\t")).join("\n");
   navigator.clipboard.writeText(txt).then(() => { $("copyBtn").textContent = "복사했습니다"; setTimeout(() => $("copyBtn").textContent = "엑셀용 복사", 2000); })

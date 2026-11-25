@@ -140,7 +140,7 @@ body {
 .kin.need { border-color: var(--warn); }
 
 /* 완성 안내 */
-.complete { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 18px; align-items: center; border-radius: 16px; padding: 18px 22px; background: linear-gradient(100deg, #e7c46f, #d1ad5c 55%, #c39a45); color: #1b2a4a; box-shadow: 0 10px 26px rgba(150, 110, 30, .25); }
+.complete { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 6px 18px; align-items: center; border-radius: 16px; padding: 18px 22px; background: linear-gradient(100deg, #e7c46f, #d1ad5c 55%, #c39a45); color: #1b2a4a; box-shadow: 0 10px 26px rgba(150, 110, 30, .25); }
 .complete .seal { width: 64px; height: 64px; border-radius: 50%; border: 3px solid #1b2a4a; display: grid; place-items: center; font-family: var(--serif); font-weight: 700; font-size: 12px; letter-spacing: .1em; text-align: center; line-height: 1.2; }
 .complete .ct { font-size: clamp(18px, 2.6vw, 23px); font-weight: 700; line-height: 1.3; }
 .complete .cs { font-size: 13.5px; font-weight: 500; }
@@ -195,6 +195,34 @@ body {
 
 .locked { opacity: .45; filter: grayscale(.4); }
 
+/* 개인정보 수집·이용 동의 (하단 안내 + 팝업) */
+.privacy { background: var(--paper-2); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; display: grid; gap: 10px; }
+.pv-tabs { font-size: 13.5px; font-weight: 700; }
+.pv-tabs .on { color: #d6336c; }
+.privacy h2, .modal-card h2 { margin: 0; font-size: 18px; }
+.privacy h2 small { font-size: 12.5px; color: var(--muted); font-weight: 500; }
+.req { color: #d6336c; }
+.pv-lead { margin: 0; font-size: 13.5px; color: var(--muted); }
+.pv-table { margin: 0; display: grid; }
+.pv-table > div { display: grid; grid-template-columns: minmax(150px, 220px) minmax(0, 1fr); gap: 12px; padding: 10px 2px; border-bottom: 1px solid var(--line); align-items: baseline; }
+.pv-table dt { font-size: 13px; color: var(--muted); }
+.pv-table dt::before { content: "•"; margin-right: 8px; color: var(--muted); }
+.pv-table dd { margin: 0; font-weight: 700; }
+@media (max-width: 560px) { .pv-table > div { grid-template-columns: 1fr; gap: 2px; } }
+.pv-note { margin: 0; font-size: 12.5px; color: var(--muted); }
+.pv-foot { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.pv-state { margin-right: auto; font-size: 13px; font-weight: 700; color: var(--muted); }
+.pv-state.ok { color: var(--ok); }
+.modal { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 16px; background: rgba(12, 18, 32, .55); }
+.modal-card { width: min(560px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; background: var(--paper-2); color: var(--ink); border-radius: 16px; padding: 22px 22px 18px; display: grid; gap: 12px; box-shadow: 0 24px 60px rgba(0, 0, 0, .35); animation: rise .25s ease-out; }
+@keyframes rise { from { transform: translateY(14px); opacity: 0; } to { transform: none; opacity: 1; } }
+.cm-eyebrow { font-family: var(--serif); font-size: 11px; letter-spacing: .18em; color: var(--muted); }
+.cm-check { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 10px; cursor: pointer; font-size: 14px; }
+.cm-check input { width: 20px; height: 20px; margin: 1px 0 0; accent-color: #d6336c; flex: none; }
+.cm-check:has(input:checked) { border-color: #d6336c; background: color-mix(in srgb, #d6336c 6%, var(--paper-2)); }
+.cm-foot { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.complete .cbtn { background: #1b2a4a; color: #f4ecd6; border-color: #1b2a4a; }
+@media (max-width: 600px) { .complete { grid-template-columns: auto minmax(0, 1fr); } .complete .cbtn { grid-column: 1 / -1; } }
 .bottom { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: center; padding-top: 16px; border-top: 1px solid var(--line); }
 @media (max-width: 600px) { .bottom { grid-template-columns: 1fr; } }
 .rules { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
@@ -280,6 +308,7 @@ body {
   <section class="complete" id="complete" aria-live="polite" hidden>
     <div class="seal" aria-hidden="true">ALL<br>10</div>
     <div><div class="ct" id="cTitle"></div><div class="cs" id="cSub"></div></div>
+    <button class="btn cbtn" id="cConsent" type="button" hidden>개인정보 동의하기</button>
   </section>
 
   <section class="datapage" id="datapage" aria-label="여권 소지인 정보">
@@ -306,11 +335,48 @@ body {
     <ul class="rules">
       <li>분야마다 <b>서명(책 제목)</b>과 <b>서평(200자 이내)</b>을 쓰고 <b>도장 받기</b>를 누르세요.</li>
       <li>쓰는 내용은 자동 저장됩니다. 공용 PC에서는 다 쓴 뒤 꼭 <b>닫기</b>를 눌러 주세요.</li>
+      <li>10칸을 모두 채운 뒤 <b>개인정보 수집·이용 동의</b>와 <b>학과·학번</b> 입력까지 마쳐야 완성자로 등록됩니다.</li>
       <li>비밀번호를 잊었으면 도서관 안내데스크에 문의하세요.</li>
     </ul>
     <button class="btn" id="copyBtn" type="button">내 기록 복사</button>
   </div>
+
+  <section class="privacy" id="privacy" aria-labelledby="pvTitle">
+    <div class="pv-tabs" aria-hidden="true"><span class="on">● 개인정보 수집 및 이용 동의</span></div>
+    <h2 id="pvTitle"><span class="req">*</span> 개인정보 수집 및 이용 동의 <small>(필수)</small></h2>
+    <p class="pv-lead">독서 여권을 완성하려면 아래 개인정보 수집·이용에 동의해야 합니다. 동의하지 않을 경우 완성자 명단 등록과 기념품 지급이 제한됩니다.</p>
+    <dl class="pv-table">
+      <div><dt>수집 및 이용하는 개인정보 항목</dt><dd>학과 / 학번 / 이름</dd></div>
+      <div><dt>수집 및 이용 목적</dt><dd>독서 여권 완성자 확인 및 기념품 지급</dd></div>
+      <div><dt>보유 및 이용기간</dt><dd>기념품 지급(당첨자 발표) 후 1개월</dd></div>
+    </dl>
+    <p class="pv-note">위 개인정보 수집·이용에 대한 동의를 거부할 권리가 있습니다. 동의 후에도 아래에서 언제든 철회할 수 있으며, 철회하면 완성자 명단에서 빠집니다.</p>
+    <div class="pv-foot">
+      <span class="pv-state" id="pvState">여권을 열면 동의 여부가 표시됩니다.</span>
+      <button class="btn primary" id="pvAgree" type="button" disabled>동의하기</button>
+      <button class="btn" id="pvWithdraw" type="button" hidden>동의 철회</button>
+    </div>
+  </section>
+
   <div class="toast" id="toast" role="status"></div>
+</div>
+
+<div class="modal" id="consentModal" role="dialog" aria-modal="true" aria-labelledby="cmTitle" hidden>
+  <div class="modal-card">
+    <div class="cm-eyebrow">독서 여권 완성 신청</div>
+    <h2 id="cmTitle"><span class="req">*</span> 개인정보 수집 및 이용 동의</h2>
+    <p class="pv-lead">동의하지 않을 경우, 완성자 명단 등록과 기념품 지급이 제한될 수 있습니다.</p>
+    <dl class="pv-table">
+      <div><dt>수집 및 이용하는 개인정보 항목</dt><dd>학과 / 학번 / 이름</dd></div>
+      <div><dt>수집 및 이용 목적</dt><dd>독서 여권 완성자 확인 및 기념품 지급</dd></div>
+      <div><dt>보유 및 이용기간</dt><dd>기념품 지급(당첨자 발표) 후 1개월</dd></div>
+    </dl>
+    <label class="cm-check"><input type="checkbox" id="cmCheck"> <span>위 내용을 확인했으며, 개인정보 수집 및 이용에 <b>동의합니다</b></span></label>
+    <div class="cm-foot">
+      <button class="btn" id="cmLater" type="button">나중에 하기</button>
+      <button class="btn primary" id="cmAgree" type="button" disabled>동의하고 완성하기</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -342,6 +408,8 @@ const norm = a => Array.isArray(a) && a.length === N ? a.map(s => Object.assign(
 let state = blank(), issued = "", sess = null, applying = false, synced = true, localUpdated = 0;
 let student = { dept: "", sid: "" }, completed = "";
 const sidOk = s => /^\d{6,12}$/.test(s || "");
+let consent = null, consentAsked = false; // consent = { agreed: true, at: "2026.11.25 16:00" }
+const nowStamp = () => { const d = new Date(); return `${today()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
 
 /* ── 화면 그리기 ── */
 const track = $("track"), grid = $("grid");
@@ -414,12 +482,16 @@ function render() {
 
 function renderComplete(done) {
   if (done == null) done = state.filter(s => s.done).length;
+  renderPrivacy();
   const box = $("complete"), all = sess && done === N;
   box.hidden = !all;
   if (!all) return;
   const miss = [!student.dept.trim() && "학과", !sidOk(student.sid) && "학번"].filter(Boolean);
-  box.classList.toggle("pending", miss.length > 0 || !synced);
-  if (miss.length) { $("cTitle").textContent = "10칸 완성! 학과·학번을 입력해 주세요"; $("cSub").textContent = `아래 소지인 정보에 ${miss.join("과 ")}을 입력해야 도서관 완성자 명단에 올라갑니다.`; }
+  const agreed = !!(consent && consent.agreed);
+  box.classList.toggle("pending", !agreed || miss.length > 0 || !synced);
+  $("cConsent").hidden = agreed;
+  if (!agreed) { $("cTitle").textContent = "10칸 완성! 개인정보 수집·이용에 동의해 주세요"; $("cSub").textContent = "동의해야 완성자 명단에 올라가고 기념품을 받을 수 있습니다." + (miss.length ? ` (${miss.join("·")}도 입력해 주세요)` : ""); }
+  else if (miss.length) { $("cTitle").textContent = "10칸 완성! 학과·학번을 입력해 주세요"; $("cSub").textContent = `아래 소지인 정보에 ${miss.join("과 ")}을 입력해야 도서관 완성자 명단에 올라갑니다.`; }
   else if (!synced) { $("cTitle").textContent = "10칸 완성! 도서관에 등록하는 중…"; $("cSub").textContent = "잠시만 기다려 주세요. 인터넷이 연결되어 있어야 합니다."; }
   else { $("cTitle").textContent = "독서 여권 완성! 완성자 명단에 등록되었습니다"; $("cSub").textContent = `${student.dept} · ${student.sid} · ${sess.name} · 완성일 ${completed || today()}`; }
 }
@@ -431,7 +503,57 @@ function renderComplete(done) {
 function setLocked(on) {
   ["grid", "datapage"].forEach(id => { $(id).inert = on; $(id).classList.toggle("locked", on); });
   $("copyBtn").disabled = on;
+  renderPrivacy();
 }
+
+/* ── 개인정보 수집·이용 동의 ── */
+function renderPrivacy() {
+  const agreed = !!(sess && consent && consent.agreed), st = $("pvState");
+  st.textContent = !sess ? "여권을 열면 동의 여부가 표시됩니다." : agreed ? `✓ ${consent.at}에 동의했습니다` : "아직 동의하지 않았습니다";
+  st.classList.toggle("ok", agreed);
+  $("pvAgree").disabled = !sess; $("pvAgree").hidden = agreed;
+  $("pvWithdraw").hidden = !agreed;
+}
+let modalReturn = null;
+function openConsent() {
+  if (!sess || (consent && consent.agreed)) return;
+  modalReturn = document.activeElement;
+  $("cmCheck").checked = false; $("cmAgree").disabled = true;
+  $("consentModal").hidden = false; consentAsked = true;
+  setTimeout(() => $("cmCheck").focus(), 50);
+}
+function closeConsent() {
+  $("consentModal").hidden = true;
+  if (modalReturn && document.contains(modalReturn)) try { modalReturn.focus(); } catch (e) {}
+}
+$("cmCheck").addEventListener("change", () => $("cmAgree").disabled = !$("cmCheck").checked);
+$("cmAgree").addEventListener("click", () => {
+  if (!$("cmCheck").checked || !sess) return;
+  consent = { agreed: true, at: nowStamp() };
+  closeConsent(); render(); save();
+  const miss = [!student.dept.trim() && "pDept", !sidOk(student.sid) && "pSid"].filter(Boolean);
+  if (state.filter(s => s.done).length === N && miss.length) { toast("동의했습니다. 이제 학과·학번을 입력하면 완성됩니다."); $(miss[0]).focus(); $(miss[0]).scrollIntoView({ behavior: "smooth", block: "center" }); }
+  else toast("개인정보 수집·이용에 동의했습니다.");
+});
+$("cmLater").addEventListener("click", () => { closeConsent(); toast("동의해야 완성자 명단에 올라갑니다. 맨 아래에서 언제든 동의할 수 있어요."); });
+$("consentModal").addEventListener("keydown", e => {
+  if (e.key === "Escape") { e.preventDefault(); $("cmLater").click(); }
+  if (e.key === "Tab") { // 팝업 안에서만 이동
+    const f = [$("cmCheck"), $("cmLater"), $("cmAgree")].filter(x => !x.disabled);
+    const i = f.indexOf(document.activeElement);
+    if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); }
+    else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); }
+  }
+});
+$("pvAgree").addEventListener("click", openConsent);
+$("cConsent").addEventListener("click", openConsent);
+$("pvWithdraw").addEventListener("click", e => {
+  const b = e.currentTarget;
+  if (b.dataset.arm !== "1") { b.dataset.arm = "1"; b.textContent = "한 번 더 누르면 철회됩니다"; setTimeout(() => { b.dataset.arm = ""; b.textContent = "동의 철회"; }, 4000); return; }
+  b.dataset.arm = ""; b.textContent = "동의 철회";
+  consent = null; render(); save();
+  toast("동의를 철회했습니다. 완성자 명단에서 빠집니다.");
+});
 function applyData(d) {
   applying = true;
   state = norm(d && d.state);
@@ -439,12 +561,14 @@ function applyData(d) {
   localUpdated = (d && d.updated) || 0;
   student = { dept: String((d && d.student && d.student.dept) || ""), sid: String((d && d.student && d.student.sid) || "") };
   completed = (d && d.completed) || "";
+  consent = (d && d.consent && d.consent.agreed) ? { agreed: true, at: String(d.consent.at || "") } : null;
+  consentAsked = false;
   $("pDept").value = student.dept; $("pSid").value = student.sid;
   state.forEach((s, i) => { $("t" + i).value = s.title; $("r" + i).value = s.review; });
   render();
   applying = false;
 }
-const packData = () => ({ updated: localUpdated, issued, student, completed, state });
+const packData = () => ({ updated: localUpdated, issued, student, completed, consent, state });
 
 /* ── 저장소 통신 (시험 모드에서는 같은 규칙을 이 브라우저 안에서 흉내) ── */
 async function sha(s) {
@@ -542,6 +666,7 @@ async function openPass(name, pin, silent) {
   $("ckTitle").textContent = `${name} 님의 여권이 열려 있습니다`;
   $("ckSub").textContent = "쓰는 내용은 자동으로 저장됩니다. 공용 PC라면 다 쓴 뒤 꼭 '닫기'를 눌러 주세요.";
   setLocked(false);
+  if (state.filter(s => s.done).length === N && !(consent && consent.agreed)) setTimeout(openConsent, 700);
   if (upload || r.created) { synced = false; if (!data) localUpdated = Date.now(); push(); }
   else { synced = true; setStatus(r.data ? "지난 기록을 불러왔습니다" : "새 여권이 준비되었습니다"); }
   if (!silent) toast(r.created ? "새 여권을 만들었습니다. 비밀번호 4자리를 꼭 기억해 주세요!" : r.reset ? "새 비밀번호로 여권을 열었습니다." : "여권을 열었습니다. 이어서 쓰세요.");
@@ -564,6 +689,7 @@ async function closePass() {
   if (synced) { try { localStorage.removeItem(CACHE_KEY); } catch (e) {} }
   sess = null;
   try { sessionStorage.removeItem(SESS_KEY); } catch (e) {}
+  $("consentModal").hidden = true;
   applyData(null);
   $("ckForm").hidden = false; $("ckOn").hidden = true; $("ckName").value = ""; $("ckErr").textContent = "";
   $("ckTitle").textContent = "이름과 비밀번호로 여권을 여세요";
@@ -630,6 +756,8 @@ function celebrate() {
   box.querySelectorAll(".card, .cheer").forEach(el => { el.style.animation = "none"; void el.offsetWidth; el.style.animation = ""; });
   clearTimeout(celebrate.h); celebrate.h = setTimeout(() => box.hidden = true, 4700);
   burst(); setTimeout(() => burst(), 800); setTimeout(() => burst(), 1600); setTimeout(() => burst(), 2600);
+  // 축하가 끝나면 개인정보 동의 팝업 (동의해야 완성)
+  setTimeout(() => { if (sess && !(consent && consent.agreed) && state.filter(s => s.done).length === N) openConsent(); }, 4800);
 }
 
 /* ── 시작 ── */
