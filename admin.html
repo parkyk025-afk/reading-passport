@@ -155,7 +155,7 @@ tr.detail td { background: var(--paper); }
 /* 학생용 페이지와 같은 저장소 주소(…/exec). 비어 있으면 시험 모드 */
 const SYNC_URL = "";
 
-const AREAS = [["000", "총류"], ["100", "철학·심리학"], ["200", "종교"], ["300", "사회과학"], ["400", "언어"], ["500", "자연과학"], ["600", "기술과학"], ["700", "예술"], ["800", "문학"], ["900", "역사·지리"]];
+const AREAS = [["0XX", "총류"], ["1XX", "철학·심리학"], ["2XX", "종교"], ["3XX", "사회과학"], ["4XX", "언어"], ["5XX", "자연과학"], ["6XX", "기술과학"], ["7XX", "예술"], ["8XX", "문학"], ["9XX", "역사·지리"]];
 const N = AREAS.length, KEY_SS = "ddc-passport-admin-key", LOCAL_DB = "ddc-passport-local-db-v1";
 const $ = id => document.getElementById(id);
 let students = [], completers = [], openRow = null, timer = null;

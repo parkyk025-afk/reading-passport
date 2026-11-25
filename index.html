@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>DDC 독서 여권</title>
-<meta name="description" content="삼육대학교 도서관 DDC 000~900 독서 여권. 분야마다 한 권씩 읽고 서평을 남기면 입국 도장이 찍힙니다.">
+<meta name="description" content="삼육대학교 도서관 DDC 0XX~9XX 독서 여권. 분야마다 한 권씩 읽고 서평을 남기면 입국 도장이 찍힙니다.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&family=Cinzel:wght@600;700&family=IBM+Plex+Mono:wght@500;600&family=Noto+Sans+KR:wght@400;500;700&display=swap">
@@ -14,7 +14,8 @@
   --ink: #1a2230; --muted: #5a6575; --line: #c9d3cf;
   --cover: #1b2a4a; --cover-2: #26396a; --gold: #d1ad5c; --gold-soft: #e9d6a6; --cream: #f4ecd6;
   --accent: #1b2a4a; --accent-ink: #f4ecd6; --accent-soft: #dfe6f2; --warn: #b4441d; --ok: #1f7a4d;
-  --s0: #b3261e; --s1: #1f4fb0; --s2: #1f7a4d; --s3: #6b3fa0; --s4: #a15c00;
+  /* 도장 10색: 0XX~9XX 분야마다 다른 색 */
+  --s0: #c0262d; --s1: #d0570f; --s2: #a87400; --s3: #5b7f12; --s4: #17803d; --s5: #0f7c78; --s6: #1d5fd1; --s7: #4535c4; --s8: #8a2bc2; --s9: #c21d6e;
   --display: "Archivo", "Noto Sans KR", sans-serif; --serif: "Cinzel", "Times New Roman", serif;
   --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
   --body: "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif;
@@ -24,14 +25,14 @@
     --paper: #10151c; --paper-2: #171e27; --guil: rgba(120, 200, 190, .07); --guil-2: rgba(180, 150, 220, .05);
     --ink: #e8edf2; --muted: #9aa6b4; --line: #2f3944; --cover: #16223d; --cover-2: #22345c;
     --accent: #dcb968; --accent-ink: #141a26; --accent-soft: #2a3245; --warn: #f08a5d; --ok: #5fd39a;
-    --s0: #f07167; --s1: #6d9cff; --s2: #5fd39a; --s3: #c39bf0; --s4: #f2b45a; color-scheme: dark;
+    --s0: #ff6b6b; --s1: #ff9447; --s2: #f2c230; --s3: #a8d64a; --s4: #4fd17e; --s5: #3fd0c6; --s6: #6aa5ff; --s7: #9a8cff; --s8: #c98bff; --s9: #ff74b4; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --paper: #10151c; --paper-2: #171e27; --guil: rgba(120, 200, 190, .07); --guil-2: rgba(180, 150, 220, .05);
   --ink: #e8edf2; --muted: #9aa6b4; --line: #2f3944; --cover: #16223d; --cover-2: #22345c;
   --accent: #dcb968; --accent-ink: #141a26; --accent-soft: #2a3245; --warn: #f08a5d; --ok: #5fd39a;
-  --s0: #f07167; --s1: #6d9cff; --s2: #5fd39a; --s3: #c39bf0; --s4: #f2b45a; color-scheme: dark;
+  --s0: #ff6b6b; --s1: #ff9447; --s2: #f2c230; --s3: #a8d64a; --s4: #4fd17e; --s5: #3fd0c6; --s6: #6aa5ff; --s7: #9a8cff; --s8: #c98bff; --s9: #ff74b4; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -112,7 +113,26 @@ body {
 .kv { display: grid; gap: 2px; min-width: 0; }
 .kv .k { font-size: 11.5px; font-weight: 700; color: var(--muted); }
 .kv .v { font-weight: 700; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.kin { width: 100%; font: inherit; font-size: 15px; font-weight: 700; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; }
+/* 소지인 정보: 이름·학과·학번을 크게 */
+.holder { display: grid; grid-template-columns: 104px minmax(0, 1fr) auto; gap: 18px 24px; align-items: center; padding: 18px 20px; }
+.photo { width: 104px; height: 128px; border-radius: 10px; border: 1.5px solid var(--line); background: color-mix(in srgb, var(--accent) 8%, var(--paper)); display: grid; place-items: end center; overflow: hidden; }
+.photo svg { width: 84px; fill: color-mix(in srgb, var(--accent) 35%, var(--paper)); }
+.hfields { display: grid; gap: 12px; min-width: 0; }
+.holder .k { font: 600 11.5px var(--mono); letter-spacing: .1em; color: var(--muted); }
+.hname { display: grid; gap: 2px; min-width: 0; }
+.hname .nm { font-size: clamp(26px, 4vw, 36px); font-weight: 700; line-height: 1.15; letter-spacing: .02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hrow { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 12px; }
+.hstamp { display: grid; justify-items: end; gap: 2px; align-self: start; }
+.hstamp .hn { font-family: var(--display); font-weight: 800; font-stretch: 75%; font-size: 40px; line-height: 1; font-variant-numeric: tabular-nums; }
+@media (max-width: 720px) {
+  .holder { grid-template-columns: 76px minmax(0, 1fr); }
+  .photo { width: 76px; height: 94px; } .photo svg { width: 62px; }
+  .holder { padding: 16px; gap: 14px; align-items: start; }
+  .hstamp { display: none; }
+  .hrow { grid-template-columns: 1fr; }
+}
+.kin { width: 100%; font: inherit; font-size: 19px; font-weight: 700; color: var(--ink); background: var(--paper); border: 1.5px solid var(--line); border-radius: 10px; padding: 10px 14px; }
+.kin::placeholder { font-weight: 500; color: var(--muted); opacity: .6; }
 .kin:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .kin.need { border-color: var(--warn); }
 
@@ -160,7 +180,7 @@ body {
   font-family: var(--mono); font-weight: 600; text-transform: uppercase; opacity: 0; filter: url(#ink);
   transform: rotate(var(--rot)) scale(2.2); transition: opacity .12s, transform .3s cubic-bezier(.25, 1.6, .45, 1);
 }
-.stamp.sq { border-radius: 12px; }
+.stamp.sq { border-radius: 12px; width: 76px; height: 76px; right: 16px; top: 16px; }
 .stamp .s1 { font-size: 8.5px; letter-spacing: .12em; }
 .stamp .s3 { font-size: 8.5px !important; }
 .stamp .s2 { font-family: var(--display); font-size: 25px; font-weight: 900; font-stretch: 72%; line-height: .95; }
@@ -199,7 +219,7 @@ body {
   </filter>
 </svg>
 <canvas id="fx" aria-hidden="true"></canvas>
-<div class="celebrate" id="celebrate" hidden><div class="card" role="status"><div class="big">여권 완성!</div><div class="small">ALL 10 CLASSES · DDC 000–900</div></div></div>
+<div class="celebrate" id="celebrate" hidden><div class="card" role="status"><div class="big">여권 완성!</div><div class="small">ALL 10 CLASSES · DDC 0XX–9XX</div></div></div>
 
 <div class="wrap">
   <header class="cover">
@@ -214,7 +234,7 @@ body {
       <div class="eyebrow">SAHMYOOK UNIVERSITY LIBRARY</div>
       <h1>READING PASSPORT</h1>
       <div class="ko">DDC 독서 여권</div>
-      <p class="lede">듀이십진분류(DDC) 000부터 900까지, 10개 분야를 여행하듯 한 권씩 읽고 서평을 남기면 입국 도장이 찍힙니다.</p>
+      <p class="lede">듀이십진분류(DDC) 0XX부터 9XX까지, 10개 분야를 여행하듯 한 권씩 읽고 서평을 남기면 입국 도장이 찍힙니다.</p>
     </div>
     <div class="stat"><div class="n" id="doneN">0<small>/10</small></div><div class="k">받은 도장</div></div>
   </header>
@@ -247,11 +267,18 @@ body {
 
   <section class="datapage" id="datapage" aria-label="여권 소지인 정보">
     <div class="dp-head"><span>PASSPORT DATA · 소지인 정보</span><span>삼육대학교 도서관 발급 · <span id="pIssued">-</span></span></div>
-    <div class="dp-body">
-      <div class="kv"><span class="k">이름 · Name</span><span class="v" id="pName">-</span></div>
-      <div class="kv"><label class="k" for="pDept">학과 · Department</label><input class="kin" type="text" id="pDept" maxlength="40" autocomplete="off" placeholder="예: 문헌정보학과"></div>
-      <div class="kv"><label class="k" for="pSid">학번 · Student No.</label><input class="kin" type="text" id="pSid" maxlength="12" inputmode="numeric" autocomplete="off" placeholder="예: 2026123456"></div>
-      <div class="kv"><span class="k">받은 도장 · Stamps</span><span class="v" id="pStamps">0 / 10</span></div>
+    <div class="holder">
+      <div class="photo" aria-hidden="true">
+        <svg viewBox="0 0 80 96"><circle cx="40" cy="36" r="17"/><path d="M8 96c2-22 15-32 32-32s30 10 32 32z"/></svg>
+      </div>
+      <div class="hfields">
+        <div class="hname"><span class="k">이름 · NAME</span><span class="nm" id="pName">-</span></div>
+        <div class="hrow">
+          <div class="kv"><label class="k" for="pDept">학과 · DEPARTMENT</label><input class="kin" type="text" id="pDept" maxlength="40" autocomplete="off" placeholder="예: 문헌정보학과"></div>
+          <div class="kv"><label class="k" for="pSid">학번 · STUDENT NO.</label><input class="kin" type="text" id="pSid" maxlength="12" inputmode="numeric" autocomplete="off" placeholder="예: 2026123456"></div>
+        </div>
+      </div>
+      <div class="hstamp"><span class="k">받은 도장</span><span class="hn" id="pStamps">0 / 10</span></div>
     </div>
     <div class="mrz" id="mrz" aria-hidden="true"></div>
   </section>
@@ -274,16 +301,16 @@ body {
 const SYNC_URL = "";
 
 const AREAS = [
-  ["000", "총류", "컴퓨터·정보·일반 저작"],
-  ["100", "철학·심리학", "생각하는 법, 마음의 이해"],
-  ["200", "종교", "믿음과 신념의 세계"],
-  ["300", "사회과학", "사회·경제·정치·교육"],
-  ["400", "언어", "말과 글, 외국어"],
-  ["500", "자연과학", "수학·물리·생명·지구"],
-  ["600", "기술과학", "의학·공학·생활 기술"],
-  ["700", "예술", "미술·음악·스포츠·취미"],
-  ["800", "문학", "소설·시·에세이"],
-  ["900", "역사·지리", "역사·전기·여행"]
+  ["0XX", "총류", "컴퓨터·정보·일반 저작"],
+  ["1XX", "철학·심리학", "생각하는 법, 마음의 이해"],
+  ["2XX", "종교", "믿음과 신념의 세계"],
+  ["3XX", "사회과학", "사회·경제·정치·교육"],
+  ["4XX", "언어", "말과 글, 외국어"],
+  ["5XX", "자연과학", "수학·물리·생명·지구"],
+  ["6XX", "기술과학", "의학·공학·생활 기술"],
+  ["7XX", "예술", "미술·음악·스포츠·취미"],
+  ["8XX", "문학", "소설·시·에세이"],
+  ["9XX", "역사·지리", "역사·전기·여행"]
 ];
 const MAX = 200, N = AREAS.length;
 const STAMP_ROT = [-11, 7, -5, 13, -14, 4, -8, 10, -3, 12];
@@ -305,7 +332,7 @@ AREAS.forEach(() => track.appendChild(document.createElement("i")));
 AREAS.forEach(([code, name, desc], i) => {
   const el = document.createElement("article");
   el.className = "cell";
-  el.style.setProperty("--sc", `var(--s${i % 5})`);
+  el.style.setProperty("--sc", `var(--s${i})`);
   el.style.setProperty("--rot", STAMP_ROT[i] + "deg");
   el.addEventListener("animationend", () => el.classList.remove("thud"));
   el.innerHTML = `
@@ -364,7 +391,7 @@ function render() {
   $("pIssued").textContent = sess ? (issued || today()) : "-";
   const pad = (s, n) => (s + "<".repeat(n)).slice(0, n);
   const nm = sess ? [...sess.name].length + "CHR" : "";
-  $("mrz").textContent = pad("RP<SYU<READING<PASSPORT<<DDC<000<900", 44) + "\n" +
+  $("mrz").textContent = pad("RP<SYU<READING<PASSPORT<<DDC<0XX<9XX", 44) + "\n" +
     pad("P" + pad(nm, 6) + "<KOR" + (issued || today()).replace(/\./g, "").slice(2) + "<S" + String(done).padStart(2, "0") + "<<LIBRARY", 44);
 }
 
