@@ -225,6 +225,8 @@ body {
 @media (max-width: 600px) { .complete { grid-template-columns: auto minmax(0, 1fr); } .complete .cbtn { grid-column: 1 / -1; } }
 .bottom { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: center; padding-top: 16px; border-top: 1px solid var(--line); }
 @media (max-width: 600px) { .bottom { grid-template-columns: 1fr; } }
+.bottom-btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+@media (max-width: 600px) { .bottom-btns { justify-content: flex-start; } }
 .rules { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
 .rules b { color: var(--ink); }
 .toast {
@@ -338,7 +340,10 @@ body {
       <li>10칸을 모두 채운 뒤 <b>개인정보 수집·이용 동의</b>와 <b>학과·학번</b> 입력까지 마쳐야 완성자로 등록됩니다.</li>
       <li>비밀번호를 잊었으면 도서관 안내데스크에 문의하세요.</li>
     </ul>
-    <button class="btn" id="copyBtn" type="button">내 기록 복사</button>
+    <div class="bottom-btns">
+      <button class="btn" id="copyBtn" type="button">내 기록 복사</button>
+      <button class="btn primary" id="pdfBtn" type="button" title="인쇄 창에서 대상(프린터)을 'PDF로 저장'으로 고르세요">PDF로 내려받기</button>
+    </div>
   </div>
 
   <section class="privacy" id="privacy" aria-labelledby="pvTitle">
@@ -502,7 +507,7 @@ function renderComplete(done) {
 }));
 function setLocked(on) {
   ["grid", "datapage"].forEach(id => { $(id).inert = on; $(id).classList.toggle("locked", on); });
-  $("copyBtn").disabled = on;
+  $("copyBtn").disabled = on; $("pdfBtn").disabled = on;
   renderPrivacy();
 }
 
@@ -722,6 +727,46 @@ $("copyBtn").addEventListener("click", () => {
   const txt = `DDC 독서 여권 · ${student.dept || "-"} · ${student.sid || "-"} · ${sess ? sess.name : ""} · 도장 ${done}/${N} (${today()})\n\n` +
     AREAS.map(([c, n], i) => `[${c} ${n}] ${state[i].done ? "도장 " + state[i].doneAt : "진행 중"}\n서명: ${state[i].title || "-"}\n서평: ${state[i].review || "-"}`).join("\n\n");
   navigator.clipboard.writeText(txt).then(() => toast("기록을 복사했습니다.")).catch(() => toast("복사가 막혀 있습니다. 글을 직접 선택해 복사해 주세요."));
+});
+
+/* 내 기록 PDF: 기록만 담은 인쇄용 문서를 숨은 프레임에 만들어 인쇄 창 → 'PDF로 저장' */
+$("pdfBtn").addEventListener("click", () => {
+  if (!sess) { toast("먼저 이름과 비밀번호로 여권을 열어 주세요."); return; }
+  const h = v => String(v == null ? "" : v).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const done = state.filter(s => s.done).length, d = new Date(), p2 = n => String(n).padStart(2, "0");
+  const ymd = `${d.getFullYear()}${p2(d.getMonth() + 1)}${p2(d.getDate())}`;
+  const rows = AREAS.map(([c, n], i) => {
+    const s = state[i] || {};
+    return `<tr><td class="cls"><b>${h(c)}</b><br><span>${h(n)}</span></td><td class="ttl">${h(s.title || "-")}</td><td class="rv">${h(s.review || "-")}</td><td class="st">${s.done ? `<span class="stamp">${h(c.replace("XX", "00"))}</span><br>${h(s.doneAt || "")}` : "<span class=\"wait\">진행 중</span>"}</td></tr>`;
+  }).join("");
+  const html = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>독서여권_${h(sess.name)}_${ymd}</title><style>
+    @page { size: A4; margin: 14mm 12mm; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; box-sizing: border-box; }
+    body { font-family: "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; color: #111; font-size: 10pt; margin: 0; }
+    .head { background: #1b2a4a; color: #d1ad5c; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: flex-end; }
+    .head h1 { margin: 0; font-size: 17pt; } .head .en { font-size: 8pt; letter-spacing: .2em; color: #e9d6a6; } .head .cnt { font-size: 18pt; font-weight: 800; }
+    .info { display: flex; gap: 22px; margin: 10px 2px 10px; font-size: 10.5pt; } .info b { margin-left: 4px; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; } thead { display: table-header-group; } tr { page-break-inside: avoid; }
+    th, td { border: 1px solid #888; padding: 6px 7px; vertical-align: top; text-align: left; word-break: break-all; }
+    th { background: #e8ecf3; font-size: 9pt; text-align: center; }
+    td.cls { width: 22mm; text-align: center; } td.cls span { font-size: 8.5pt; color: #444; }
+    td.ttl { width: 42mm; font-weight: 700; } td.rv { white-space: pre-wrap; font-size: 9.5pt; }
+    td.st { width: 24mm; text-align: center; font-size: 8pt; color: #444; }
+    .stamp { display: inline-block; border: 2px solid #c0262d; color: #c0262d; border-radius: 50%; padding: 4px 6px; font-weight: 900; font-size: 11pt; transform: rotate(-8deg); }
+    .wait { color: #999; } .foot { margin-top: 8px; font-size: 8.5pt; color: #555; }
+  </style></head><body>
+    <div class="head"><div><div class="en">SAHMYOOK UNIVERSITY LIBRARY · READING PASSPORT</div><h1>DDC 독서 여권 기록</h1></div><div class="cnt">${done} / ${N}</div></div>
+    <div class="info"><span>이름<b>${h(sess.name)}</b></span><span>학과<b>${h(student.dept || "-")}</b></span><span>학번<b>${h(student.sid || "-")}</b></span><span>출력일<b>${d.getFullYear()}.${p2(d.getMonth() + 1)}.${p2(d.getDate())}</b></span></div>
+    <table><colgroup><col style="width:14%"><col style="width:24%"><col style="width:48%"><col style="width:14%"></colgroup><thead><tr><th>분야</th><th>서명(책 제목)</th><th>서평</th><th>도장</th></tr></thead><tbody>${rows}</tbody></table>
+    <p class="foot">삼육대학교 도서관 DDC 독서 여권 · ${done === N ? "10개 분야 모두 완성!" : `앞으로 ${N - done}칸 남았습니다.`}</p>
+  </body></html>`;
+  const old = document.getElementById("pdfFrame"); if (old) old.remove();
+  const f = document.createElement("iframe"); f.id = "pdfFrame"; f.setAttribute("aria-hidden", "true");
+  f.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden";
+  document.body.append(f);
+  const doc = f.contentDocument; doc.open(); doc.write(html); doc.close();
+  const prevTitle = document.title; document.title = `독서여권_${sess.name}_${ymd}`;
+  setTimeout(() => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) { toast("인쇄 창을 열지 못했습니다. Ctrl+P로 저장해 주세요."); } document.title = prevTitle; }, 250);
 });
 
 function toast(msg) { const t = $("toast"); t.textContent = msg; clearTimeout(toast.h); toast.h = setTimeout(() => t.textContent = "", 3200); }
