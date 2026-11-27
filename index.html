@@ -407,8 +407,8 @@ const CACHE_KEY = "ddc-passport-cache-v1", SESS_KEY = "ddc-passport-session-v1",
 const $ = id => document.getElementById(id);
 const len = s => [...(s || "")].length;
 const today = () => { const d = new Date(); return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`; };
-const blank = () => AREAS.map(() => ({ title: "", call: "", review: "", done: false, doneAt: "" }));
-const norm = a => Array.isArray(a) && a.length === N ? a.map(s => Object.assign({ title: "", call: "", review: "", done: false, doneAt: "" }, s)) : blank();
+const blank = () => AREAS.map(() => ({ title: "", author: "", call: "", review: "", done: false, doneAt: "" }));
+const norm = a => Array.isArray(a) && a.length === N ? a.map(s => Object.assign({ title: "", author: "", call: "", review: "", done: false, doneAt: "" }, s)) : blank();
 
 let state = blank(), issued = "", sess = null, applying = false, synced = true, localUpdated = 0;
 let student = { dept: "", sid: "" }, completed = "";
@@ -434,12 +434,14 @@ AREAS.forEach(([code, name, desc], i) => {
     <div class="slot" aria-hidden="true">STAMP<br>HERE</div>
     <div class="stamp${i % 2 ? " sq" : ""}" aria-hidden="true"><span class="s1">${STAMP_WORD[i]}</span><span class="s2">${code.replace("XX", "00")}</span><span class="s3" id="sd${i}"></span></div>
     <div class="field"><label for="t${i}">서명 <span>책 제목</span></label><input type="text" id="t${i}" maxlength="100" autocomplete="off" placeholder="읽은 책 제목"></div>
+    <div class="field"><label for="a${i}">저자 <span>지은이</span></label><input type="text" id="a${i}" maxlength="60" autocomplete="off" placeholder="예: 한강"></div>
     <div class="field"><label for="k${i}">청구기호 <span>책등 라벨의 번호</span></label><input type="text" id="k${i}" maxlength="40" autocomplete="off" placeholder="예: 813.7 김67ㅇ"></div>
     <div class="field"><label for="r${i}">서평 <span class="count" id="c${i}">0 / ${MAX}자</span></label><textarea id="r${i}" maxlength="${MAX}" placeholder="인상 깊었던 내용과 내 생각을 200자 이내로 적어 주세요."></textarea></div>
     <div class="foot"><span class="hint" id="h${i}"></span><button class="stampbtn" id="b${i}" type="button" aria-pressed="false">도장 받기</button></div>`;
   grid.appendChild(el);
   const t = el.querySelector("input"), r = el.querySelector("textarea");
   t.addEventListener("input", () => { state[i].title = t.value; render(); save(); });
+  const au = $("a" + i); au.addEventListener("input", () => { state[i].author = au.value; save(); });
   const k = $("k" + i); k.addEventListener("input", () => { state[i].call = k.value; save(); });
   r.addEventListener("input", () => {
     if (len(r.value) > MAX) r.value = [...r.value].slice(0, MAX).join("");
@@ -571,7 +573,7 @@ function applyData(d) {
   consent = (d && d.consent && d.consent.agreed) ? { agreed: true, at: String(d.consent.at || "") } : null;
   consentAsked = false;
   $("pDept").value = student.dept; $("pSid").value = student.sid;
-  state.forEach((s, i) => { $("t" + i).value = s.title; $("k" + i).value = s.call || ""; $("r" + i).value = s.review; });
+  state.forEach((s, i) => { $("t" + i).value = s.title; $("a" + i).value = s.author || ""; $("k" + i).value = s.call || ""; $("r" + i).value = s.review; });
   render();
   applying = false;
 }
@@ -727,7 +729,7 @@ addEventListener("pagehide", () => {
 $("copyBtn").addEventListener("click", () => {
   const done = state.filter(s => s.done).length;
   const txt = `DDC 독서 여권 · ${student.dept || "-"} · ${student.sid || "-"} · ${sess ? sess.name : ""} · 도장 ${done}/${N} (${today()})\n\n` +
-    AREAS.map(([c, n], i) => `[${c} ${n}] ${state[i].done ? "도장 " + state[i].doneAt : "진행 중"}\n서명: ${state[i].title || "-"}\n청구기호: ${state[i].call || "-"}\n서평: ${state[i].review || "-"}`).join("\n\n");
+    AREAS.map(([c, n], i) => `[${c} ${n}] ${state[i].done ? "도장 " + state[i].doneAt : "진행 중"}\n서명: ${state[i].title || "-"}\n저자: ${state[i].author || "-"}\n청구기호: ${state[i].call || "-"}\n서평: ${state[i].review || "-"}`).join("\n\n");
   navigator.clipboard.writeText(txt).then(() => toast("기록을 복사했습니다.")).catch(() => toast("복사가 막혀 있습니다. 글을 직접 선택해 복사해 주세요."));
 });
 
@@ -739,7 +741,7 @@ $("pdfBtn").addEventListener("click", () => {
   const ymd = `${d.getFullYear()}${p2(d.getMonth() + 1)}${p2(d.getDate())}`;
   const rows = AREAS.map(([c, n], i) => {
     const s = state[i] || {};
-    return `<tr><td class="cls"><b>${h(c)}</b><br><span>${h(n)}</span></td><td class="ttl">${h(s.title || "-")}</td><td class="cn">${h(s.call || "-")}</td><td class="rv">${h(s.review || "-")}</td><td class="st">${s.done ? `<span class="stamp">${h(c.replace("XX", "00"))}</span><br>${h(s.doneAt || "")}` : "<span class=\"wait\">진행 중</span>"}</td></tr>`;
+    return `<tr><td class="cls"><b>${h(c)}</b><br><span>${h(n)}</span></td><td class="ttl">${h(s.title || "-")}<div class="au">${h(s.author || "")}</div></td><td class="cn">${h(s.call || "-")}</td><td class="rv">${h(s.review || "-")}</td><td class="st">${s.done ? `<span class="stamp">${h(c.replace("XX", "00"))}</span><br>${h(s.doneAt || "")}` : "<span class=\"wait\">진행 중</span>"}</td></tr>`;
   }).join("");
   const html = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>독서여권_${h(sess.name)}_${ymd}</title><style>
     @page { size: A4; margin: 14mm 12mm; }
@@ -752,14 +754,14 @@ $("pdfBtn").addEventListener("click", () => {
     th, td { border: 1px solid #888; padding: 6px 7px; vertical-align: top; text-align: left; word-break: break-all; }
     th { background: #e8ecf3; font-size: 9pt; text-align: center; }
     td.cls { width: 22mm; text-align: center; } td.cls span { font-size: 8.5pt; color: #444; }
-    td.ttl { width: 42mm; font-weight: 700; } td.cn { font-size: 9pt; } td.rv { white-space: pre-wrap; font-size: 9.5pt; }
+    td.ttl { width: 42mm; font-weight: 700; } td.cn { font-size: 9pt; } td.ttl .au { font-weight: 400; font-size: 9pt; color: #444; margin-top: 2px; } td.rv { white-space: pre-wrap; font-size: 9.5pt; }
     td.st { width: 24mm; text-align: center; font-size: 8pt; color: #444; }
     .stamp { display: inline-block; border: 2px solid #c0262d; color: #c0262d; border-radius: 50%; padding: 4px 6px; font-weight: 900; font-size: 11pt; transform: rotate(-8deg); }
     .wait { color: #999; } .foot { margin-top: 8px; font-size: 8.5pt; color: #555; }
   </style></head><body>
     <div class="head"><div><div class="en">SAHMYOOK UNIVERSITY LIBRARY · READING PASSPORT</div><h1>DDC 독서 여권 기록</h1></div><div class="cnt">${done} / ${N}</div></div>
     <div class="info"><span>이름<b>${h(sess.name)}</b></span><span>학과<b>${h(student.dept || "-")}</b></span><span>학번<b>${h(student.sid || "-")}</b></span><span>출력일<b>${d.getFullYear()}.${p2(d.getMonth() + 1)}.${p2(d.getDate())}</b></span></div>
-    <table><colgroup><col style="width:12%"><col style="width:22%"><col style="width:15%"><col style="width:39%"><col style="width:12%"></colgroup><thead><tr><th>분야</th><th>서명(책 제목)</th><th>청구기호</th><th>서평</th><th>도장</th></tr></thead><tbody>${rows}</tbody></table>
+    <table><colgroup><col style="width:12%"><col style="width:22%"><col style="width:15%"><col style="width:39%"><col style="width:12%"></colgroup><thead><tr><th>분야</th><th>서명 / 저자</th><th>청구기호</th><th>서평</th><th>도장</th></tr></thead><tbody>${rows}</tbody></table>
     <p class="foot">삼육대학교 도서관 DDC 독서 여권 · ${done === N ? "10개 분야 모두 완성!" : `앞으로 ${N - done}칸 남았습니다.`}</p>
   </body></html>`;
   const old = document.getElementById("pdfFrame"); if (old) old.remove();
