@@ -152,12 +152,13 @@ body {
 @media (max-width: 1100px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) { .grid { grid-template-columns: minmax(0, 1fr); } }
 .cell {
-  position: relative; background: var(--paper-2); border: 1px solid var(--line); border-radius: 14px; padding: 16px;
+  position: relative; background: color-mix(in srgb, var(--sc) 9%, var(--paper-2)); border: 1px solid color-mix(in srgb, var(--sc) 40%, var(--line)); border-top: 6px solid var(--sc); border-radius: 14px; padding: 16px;
   display: grid; gap: 8px; align-content: start; min-width: 0; overflow: hidden; transition: border-color .2s, background .2s;
 }
-.cell-head { display: grid; gap: 2px; align-content: start; min-height: 118px; padding-right: 88px; padding-bottom: 10px; border-bottom: 1px dashed var(--line); }
-.visa { font-family: var(--serif); font-size: 10px; letter-spacing: .2em; color: var(--muted); }
-.code { font-family: var(--display); font-weight: 800; font-stretch: 70%; font-size: 42px; line-height: .95; font-variant-numeric: tabular-nums; }
+.cell-head { display: grid; gap: 2px; align-content: start; min-height: 118px; padding-right: 88px; padding-bottom: 10px; border-bottom: 1px dashed color-mix(in srgb, var(--sc) 45%, var(--line)); }
+.visa { font-family: var(--serif); font-size: 10px; letter-spacing: .2em; color: var(--sc); }
+.code { font-family: var(--display); font-weight: 800; font-stretch: 70%; font-size: 42px; line-height: .95; font-variant-numeric: tabular-nums; color: var(--sc); }
+.cell .slot { border-color: color-mix(in srgb, var(--sc) 55%, var(--line)); color: var(--sc); }
 .name { font-weight: 700; font-size: 15px; }
 .desc { font-size: 12px; color: var(--muted); }
 .slot { position: absolute; right: 12px; top: 12px; width: 84px; height: 84px; border: 1px dashed var(--line); border-radius: 50%; display: grid; place-items: center; font-family: var(--serif); font-size: 9px; letter-spacing: .16em; color: var(--muted); text-align: center; line-height: 1.5; }
@@ -188,7 +189,7 @@ body {
 .stamp .s3 { font-size: 8.5px !important; }
 .stamp .s2 { font-family: var(--display); font-size: 25px; font-weight: 900; font-stretch: 72%; line-height: .95; }
 .stamp .s3 { font-size: 10px; letter-spacing: .04em; border-top: 1.5px solid var(--sc); padding-top: 2px; }
-.cell.done { border-color: var(--sc); border-width: 1.5px; background: color-mix(in srgb, var(--sc) 5%, var(--paper-2)); }
+.cell.done { border-color: var(--sc); border-width: 1.5px; border-top-width: 6px; background: color-mix(in srgb, var(--sc) 16%, var(--paper-2)); }
 .cell.done .stamp { opacity: .95; transform: rotate(var(--rot)) scale(1); }
 .cell.thud { animation: thud .35s ease-out .12s; }
 @keyframes thud { 30% { transform: translateY(3px); } 60% { transform: translateY(-1px); } 100% { transform: none; } }
