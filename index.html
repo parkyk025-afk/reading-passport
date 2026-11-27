@@ -427,7 +427,7 @@ AREAS.forEach(([code, name, desc], i) => {
       <div class="name">${name}</div><div class="desc">${desc}</div>
     </div>
     <div class="slot" aria-hidden="true">STAMP<br>HERE</div>
-    <div class="stamp${i % 2 ? " sq" : ""}" aria-hidden="true"><span class="s1">${STAMP_WORD[i]}</span><span class="s2">${code}</span><span class="s3" id="sd${i}"></span></div>
+    <div class="stamp${i % 2 ? " sq" : ""}" aria-hidden="true"><span class="s1">${STAMP_WORD[i]}</span><span class="s2">${code.replace("XX", "00")}</span><span class="s3" id="sd${i}"></span></div>
     <div class="field"><label for="t${i}">서명 <span>책 제목</span></label><input type="text" id="t${i}" maxlength="100" autocomplete="off" placeholder="읽은 책 제목"></div>
     <div class="field"><label for="r${i}">서평 <span class="count" id="c${i}">0 / ${MAX}자</span></label><textarea id="r${i}" maxlength="${MAX}" placeholder="인상 깊었던 내용과 내 생각을 200자 이내로 적어 주세요."></textarea></div>
     <div class="foot"><span class="hint" id="h${i}"></span><button class="stampbtn" id="b${i}" type="button" aria-pressed="false">도장 받기</button></div>`;
@@ -586,6 +586,10 @@ async function localApi(req) {
   const put = () => { try { localStorage.setItem(LOCAL_DB, JSON.stringify(db)); } catch (e) {} };
   const now = Date.now(), u = db[name];
   if (!u) { if (req.action !== "open") return { ok: false, error: "nouser" }; const salt = String(Math.random()); db[name] = { salt, hash: await sha(salt + ":" + pin), fails: 0, until: 0, data: null }; put(); return { ok: true, created: true, data: null }; }
+  if (!u.hash) { /* 관리자가 비밀번호를 초기화함 → 이번에 넣은 숫자 4자리를 새 비밀번호로 등록 */
+    u.salt = String(Math.random()); u.hash = await sha(u.salt + ":" + pin); u.fails = 0; u.until = 0; put();
+    if (req.action === "open") return { ok: true, reset: true, data: u.data };
+  }
   if (u.until > now) return { ok: false, error: "locked", until: new Date(u.until).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }) };
   if (await sha(u.salt + ":" + pin) !== u.hash) {
     u.fails++; if (u.fails >= 5) { u.fails = 0; u.until = now + 600000; put(); return { ok: false, error: "locked", until: new Date(u.until).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }) }; }
@@ -666,6 +670,7 @@ async function openPass(name, pin, silent) {
   $("ckTitle").textContent = `${name} 님의 여권이 열려 있습니다`;
   $("ckSub").textContent = "쓰는 내용은 자동으로 저장됩니다. 공용 PC라면 다 쓴 뒤 꼭 '닫기'를 눌러 주세요.";
   setLocked(false);
+  if (r.reset) toast("비밀번호가 새로 등록되었습니다. 다음부터 방금 넣은 숫자 4자리로 여세요.");
   if (state.filter(s => s.done).length === N && !(consent && consent.agreed)) setTimeout(openConsent, 700);
   if (upload || r.created) { synced = false; if (!data) localUpdated = Date.now(); push(); }
   else { synced = true; setStatus(r.data ? "지난 기록을 불러왔습니다" : "새 여권이 준비되었습니다"); }
