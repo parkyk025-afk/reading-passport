@@ -193,7 +193,7 @@ async function fetchData(cred) {
       const d = (u && u.data) || {}, st = Array.isArray(d.state) ? d.state : [], done = st.filter(s => s && s.done).length;
       const dept = (d.student && d.student.dept) || "", sid = (d.student && d.student.sid) || "", cons = d.consent && d.consent.agreed ? (d.consent.at || "동의") : "";
       return { name, dept, sid, done, consent: cons, complete: done >= N && cons && dept && /^\d{6,12}$/.test(sid) ? (d.completed || "") || "완성" : "",
-        books: AREAS.map((_, k) => { const s = st[k] || {}; return { title: s.title || "", review: s.review || "", done: !!s.done, at: s.doneAt || "" }; }) };
+        books: AREAS.map((_, k) => { const s = st[k] || {}; return { title: s.title || "", call: s.call || "", review: s.review || "", done: !!s.done, at: s.doneAt || "" }; }) };
     }) };
   }
   const res = await fetch(SYNC_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "admin", id: cred.id, key: cred.key }) });
@@ -297,7 +297,7 @@ function renderList() {
       const grid = el("div", "books");
       AREAS.forEach(([c, n], k) => {
         const bk = (s.books && s.books[k]) || {}, card = el("div", "book");
-        card.append(el("span", "bc", `${c} ${n} · ${bk.at || ""}`), el("span", "bt", bk.title || "-"), el("span", "br", bk.review || "-"));
+        card.append(el("span", "bc", `${c} ${n} · ${bk.at || ""}`), el("span", "bt", bk.title || "-"), el("span", "bc", "청구기호 " + (bk.call || "-")), el("span", "br", bk.review || "-"));
         grid.append(card);
       });
       td.append(grid); dr.append(td); tb.append(dr);
